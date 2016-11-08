@@ -4,7 +4,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace MarkdownSharpTests
+namespace MarkdownSharp.Tests
 {
     class Program
     {
@@ -12,7 +12,7 @@ namespace MarkdownSharpTests
         static void Main(string[] args)
         {
 
-            UnitTests();
+            //UnitTests();
 
             //
             // this is the closest thing to a set of Markdown reference tests I could find
@@ -38,7 +38,7 @@ namespace MarkdownSharpTests
             //
             Test(@"mstest-0.1");
 
-            
+
             //
             // pandoc edge condition tests from 
             // http://code.google.com/p/pandoc/wiki/PandocVsMarkdownPl
@@ -48,7 +48,7 @@ namespace MarkdownSharpTests
             Benchmark();
 
             //AdHocTest();
-            
+
             Console.ReadKey();
         }
 
@@ -108,16 +108,16 @@ namespace MarkdownSharpTests
             int okalt = 0;
             int err = 0;
             int errnew = 0;
-            int total = 0;            
+            int total = 0;
 
             foreach (var file in Directory.GetFiles(path, "*.text"))
             {
 
-                expected = FileContents(Path.ChangeExtension(file, "html"));                
+                expected = FileContents(Path.ChangeExtension(file, "html"));
                 output = m.Transform(FileContents(file));
 
                 actualpath = Path.ChangeExtension(file, GetCrc16(output) + ".actual.html");
-                
+
                 total++;
 
                 Console.Write(String.Format("{0:000} {1,-55}", total, Path.GetFileNameWithoutExtension(file)));
@@ -136,7 +136,7 @@ namespace MarkdownSharpTests
                         File.WriteAllText(actualpath, output);
                 }
                 else
-                {                    
+                {
                     err++;
                     if (File.Exists(actualpath))
                         Console.WriteLine("Mismatch");
@@ -201,7 +201,7 @@ namespace MarkdownSharpTests
         /// returns CRC-16 of string as 4 hex characters
         /// </summary>
         private static string GetCrc16(string s)
-        {            
+        {
             if (String.IsNullOrEmpty(s)) return "";
             byte[] b = new Crc16().ComputeChecksumBytes(Encoding.UTF8.GetBytes(s));
             return b[0].ToString("x2") + b[1].ToString("x2");
@@ -222,7 +222,7 @@ namespace MarkdownSharpTests
             {
                 return "";
             }
-            
+
         }
 
         /// <summary>

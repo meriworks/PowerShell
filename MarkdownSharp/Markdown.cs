@@ -13,7 +13,7 @@
  * http://aspnetresources.com/blog/markdown_announced.aspx
  * 
  * MarkdownSharp
- * Copyright (c) 2009-2011 Jeff Atwood
+ * Copyright (c) 2009-2010 Jeff Atwood
  * http://stackoverflow.com
  * http://www.codinghorror.com/blog/
  * http://code.google.com/p/markdownsharp/
@@ -86,6 +86,7 @@ software, even if advised of the possibility of such damage.
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -109,6 +110,11 @@ namespace MarkdownSharp
         /// </summary>
         public string EmptyElementSuffix { get; set; }
         /// <summary>
+        /// when true, problematic URL characters like [, ], (, and so forth will be encoded 
+        /// WARNING: this is a significant deviation from the markdown spec
+        /// </summary>
+        public bool EncodeProblemUrlCharacters { get; set; }
+        /// <summary>
         /// when false, email addresses will never be auto-linked  
         /// WARNING: this is a significant deviation from the markdown spec
         /// </summary>
@@ -118,12 +124,6 @@ namespace MarkdownSharp
         /// WARNING: this is a significant deviation from the markdown spec
         /// </summary>
         public bool StrictBoldItalic { get; set; }
-
-        /// <summary>
-        /// when true, asterisks may be used for intraword emphasis
-        /// this does nothing if StrictBoldItalic is false
-        /// </summary>
-        public bool AsteriskIntraWordEmphasis { get; set; }
     }
 
 
@@ -154,7 +154,7 @@ namespace MarkdownSharp
         ///     Markdown.LinkEmails (true/false)
         ///     Markdown.AutoNewLines (true/false)
         ///     Markdown.AutoHyperlink (true/false)
-        ///     Markdown.AsteriskIntraWordEmphasis (true/false)
+        ///     Markdown.EncodeProblemUrlCharacters (true/false) 
         ///     
         /// </summary>
         public Markdown(bool loadOptionsFromConfigFile)
@@ -175,14 +175,14 @@ namespace MarkdownSharp
                     case "Markdown.EmptyElementSuffix":
                         _emptyElementSuffix = settings[key];
                         break;
+                    case "Markdown.EncodeProblemUrlCharacters":
+                        _encodeProblemUrlCharacters = Convert.ToBoolean(settings[key]);
+                        break;
                     case "Markdown.LinkEmails":
                         _linkEmails = Convert.ToBoolean(settings[key]);
                         break;
                     case "Markdown.StrictBoldItalic":
                         _strictBoldItalic = Convert.ToBoolean(settings[key]);
-                        break;
-                    case "Markdown.AsteriskIntraWordEmphasis":
-                        _asteriskIntraWordEmphasis = Convert.ToBoolean(settings[key]);
                         break;
                 }
             }
@@ -196,9 +196,9 @@ namespace MarkdownSharp
             _autoHyperlink = options.AutoHyperlink;
             _autoNewlines = options.AutoNewlines;
             _emptyElementSuffix = options.EmptyElementSuffix;
+            _encodeProblemUrlCharacters = options.EncodeProblemUrlCharacters;
             _linkEmails = options.LinkEmails;
             _strictBoldItalic = options.StrictBoldItalic;
-            _asteriskIntraWordEmphasis = options.AsteriskIntraWordEmphasis;
         }
 
 
@@ -235,17 +235,6 @@ namespace MarkdownSharp
         private bool _strictBoldItalic = false;
 
         /// <summary>
-        /// when true, asterisks may be used for intraword emphasis
-        /// this does nothing if StrictBoldItalic is false
-        /// </summary>
-        public bool AsteriskIntraWordEmphasis
-        {
-            get { return _asteriskIntraWordEmphasis; }
-            set { _asteriskIntraWordEmphasis = value; }
-        }
-        private bool _asteriskIntraWordEmphasis = false;
-
-        /// <summary>
         /// when true, RETURN becomes a literal newline  
         /// WARNING: this is a significant deviation from the markdown spec
         /// </summary>
@@ -266,6 +255,17 @@ namespace MarkdownSharp
             set { _autoHyperlink = value; }
         }
         private bool _autoHyperlink = false;
+
+        /// <summary>
+        /// when true, problematic URL characters like [, ], (, and so forth will be encoded 
+        /// WARNING: this is a significant deviation from the markdown spec
+        /// </summary>
+        public bool EncodeProblemUrlCharacters
+        {
+            get { return _encodeProblemUrlCharacters; }
+            set { _encodeProblemUrlCharacters = value; }
+        }
+        private bool _encodeProblemUrlCharacters = false;
 
         #endregion
 
@@ -298,14 +298,13 @@ namespace MarkdownSharp
 
         private static readonly Dictionary<string, string> _escapeTable;
         private static readonly Dictionary<string, string> _invertedEscapeTable;
-        private static readonly Dictionary<string, string> _backslashEscapeTable;
+        private static readonly Dictionary<string, string> _backslashEscapeTable;        
 
         private readonly Dictionary<string, string> _urls = new Dictionary<string, string>();
         private readonly Dictionary<string, string> _titles = new Dictionary<string, string>();
         private readonly Dictionary<string, string> _htmlBlocks = new Dictionary<string, string>();
 
         private int _listLevel;
-        private static string AutoLinkPreventionMarker = "\x1AP"; // temporarily replaces "://" where auto-linking shouldn't happen
 
         /// <summary>
         /// In the static constuctor we'll initialize what stays the same across all transforms.
@@ -320,10 +319,10 @@ namespace MarkdownSharp
 
             string backslashPattern = "";
 
-            foreach (char c in @"\`*_{}[]()>#+-.!/:")
+            foreach (char c in @"\`*_{}[]()>#+-.!|")
             {
                 string key = c.ToString();
-                string hash = GetHashKey(key, isHtmlBlock: false);
+                string hash = GetHashKey(key);
                 _escapeTable.Add(key, hash);
                 _invertedEscapeTable.Add(hash, key);
                 _backslashEscapeTable.Add(@"\" + key, hash);
@@ -359,7 +358,7 @@ namespace MarkdownSharp
             Setup();
 
             text = Normalize(text);
-
+           
             text = HashHTMLBlocks(text);
             text = StripLinkDefinitions(text);
             text = RunBlockGamut(text);
@@ -374,21 +373,21 @@ namespace MarkdownSharp
         /// <summary>
         /// Perform transformations that form block-level tags like paragraphs, headers, and list items.
         /// </summary>
-        private string RunBlockGamut(string text, bool unhash = true, bool createParagraphs = true)
+        private string RunBlockGamut(string text)
         {
             text = DoHeaders(text);
-            text = DoHorizontalRules(text);
+            text = DoTables(text);
+			text = DoHorizontalRules(text);
             text = DoLists(text);
             text = DoCodeBlocks(text);
             text = DoBlockQuotes(text);
-
             // We already ran HashHTMLBlocks() before, in Markdown(), but that
             // was to escape raw HTML in the original Markdown source. This time,
             // we're escaping the markup we've just created, so that we don't wrap
             // <p> tags around block-level tags.
             text = HashHTMLBlocks(text);
 
-            text = FormParagraphs(text, unhash: unhash, createParagraphs: createParagraphs);
+            text = FormParagraphs(text);
 
             return text;
         }
@@ -411,8 +410,6 @@ namespace MarkdownSharp
             // delimiters in inline links like [this](<url>).
             text = DoAutoLinks(text);
 
-            text = text.Replace(AutoLinkPreventionMarker, "://");
-
             text = EncodeAmpsAndAngles(text);
             text = DoItalicsAndBold(text);
             text = DoHardBreaks(text);
@@ -424,48 +421,26 @@ namespace MarkdownSharp
         private static Regex _newlinesMultiple = new Regex(@"\n{2,}", RegexOptions.Compiled);
         private static Regex _leadingWhitespace = new Regex(@"^[ ]*", RegexOptions.Compiled);
 
-        private static Regex _htmlBlockHash = new Regex("\x1AH\\d+H", RegexOptions.Compiled);
-
         /// <summary>
         /// splits on two or more newlines, to form "paragraphs";    
-        /// each paragraph is then unhashed (if it is a hash and unhashing isn't turned off) or wrapped in HTML p tag
+        /// each paragraph is then unhashed (if it is a hash) or wrapped in HTML p tag
         /// </summary>
-        private string FormParagraphs(string text, bool unhash = true, bool createParagraphs = true)
+        private string FormParagraphs(string text)
         {
             // split on two or more newlines
             string[] grafs = _newlinesMultiple.Split(_newlinesLeadingTrailing.Replace(text, ""));
-
+            
             for (int i = 0; i < grafs.Length; i++)
             {
-                if (grafs[i].Contains("\x1AH"))
+                if (grafs[i].StartsWith("\x1A"))
                 {
                     // unhashify HTML blocks
-                    if (unhash)
-                    {
-                        int sanityCheck = 50; // just for safety, guard against an infinite loop
-                        bool keepGoing = true; // as long as replacements where made, keep going
-                        while (keepGoing && sanityCheck > 0)
-                        {
-                            keepGoing = false;
-                            grafs[i] = _htmlBlockHash.Replace(grafs[i], match =>
-                            {
-                                keepGoing = true;
-                                return _htmlBlocks[match.Value];
-                            });
-                            sanityCheck--;
-                        }
-                        /* if (keepGoing)
-                        {
-                            // Logging of an infinite loop goes here.
-                            // If such a thing should happen, please open a new issue on http://code.google.com/p/markdownsharp/
-                            // with the input that caused it.
-                        }*/
-                    }
+                    grafs[i] = _htmlBlocks[grafs[i]];
                 }
                 else
                 {
                     // do span level processing inside the block, then wrap result in <p> tags
-                    grafs[i] = _leadingWhitespace.Replace(RunSpanGamut(grafs[i]), createParagraphs ? "<p>" : "") + (createParagraphs ? "</p>" : "");
+                    grafs[i] = _leadingWhitespace.Replace(RunSpanGamut(grafs[i]), "<p>") + "</p>";
                 }
             }
 
@@ -539,7 +514,7 @@ namespace MarkdownSharp
         }
 
         private static Regex _linkDef = new Regex(string.Format(@"
-                        ^[ ]{{0,{0}}}\[([^\[\]]+)\]:  # id = $1
+                        ^[ ]{{0,{0}}}\[(.+)\]:  # id = $1
                           [ ]*
                           \n?                   # maybe *one* newline
                           [ ]*
@@ -655,7 +630,7 @@ namespace MarkdownSharp
             string pattern = @"
             (?>
                   (?>
-                    (?<=\n)     # Starting at the beginning of a line
+                    (?<=\n)     # Starting after a blank line
                     |           # or
                     \A\n?       # the beginning of the doc
                   )
@@ -664,6 +639,7 @@ namespace MarkdownSharp
                     # Match from `\n<tag>` to `</tag>\n`, handling nested tags 
                     # in between.
                       
+                        [ ]{0,$less_than_tab}
                         <($block_tags_b_re)   # start tag = $2
                         $attr>                # attributes followed by > and \n
                         $content              # content, support nesting
@@ -673,6 +649,7 @@ namespace MarkdownSharp
 
                   | # Special version for tags of group a.
 
+                        [ ]{0,$less_than_tab}
                         <($block_tags_a_re)   # start tag = $3
                         $attr>[ ]*\n          # attributes followed by >
                         $content2             # content, support nesting
@@ -684,7 +661,7 @@ namespace MarkdownSharp
                     # case than to make the other regex more complicated.
                   
                         [ ]{0,$less_than_tab}
-                        <hr
+                        <(hr)                 # start tag = $2
                         $attr                 # attributes
                         /?>                   # the matching end tag
                         [ ]*
@@ -692,10 +669,9 @@ namespace MarkdownSharp
                   
                   | # Special case for standalone HTML comments:
                   
-                      (?<=\n\n|\A)            # preceded by a blank line or start of document
                       [ ]{0,$less_than_tab}
                       (?s:
-                        <!--(?:|(?:[^>-]|-[^>])(?:[^-]|-[^-])*)-->
+                        <!-- .*? -->
                       )
                       [ ]*
                       (?=\n{2,}|\Z)            # followed by a blank line or end of document
@@ -704,9 +680,9 @@ namespace MarkdownSharp
                   
                       [ ]{0,$less_than_tab}
                       (?s:
-                        <([?%])                # $4
+                        <([?%])                # $2
                         .*?
-                        \4>
+                        \2>
                       )
                       [ ]*
                       (?=\n{2,}|\Z)            # followed by a blank line or end of document
@@ -735,20 +711,19 @@ namespace MarkdownSharp
         private string HtmlEvaluator(Match match)
         {
             string text = match.Groups[1].Value;
-            string key = GetHashKey(text, isHtmlBlock: true);
+            string key = GetHashKey(text);
             _htmlBlocks[key] = text;
 
             return string.Concat("\n\n", key, "\n\n");
         }
 
-        private static string GetHashKey(string s, bool isHtmlBlock)
+        private static string GetHashKey(string s)
         {
-            var delim = isHtmlBlock ? 'H' : 'E';
-            return "\x1A" + delim +  Math.Abs(s.GetHashCode()).ToString() + delim;
+            return "\x1A" + Math.Abs(s.GetHashCode()).ToString() + "\x1A";
         }
 
         private static Regex _htmlTokens = new Regex(@"
-            (<!--(?:|(?:[^>-]|-[^>])(?:[^-]|-[^-])*)-->)|        # match <!-- foo -->
+            (<!(?:--.*?--\s*)+>)|        # match <!-- foo -->
             (<\?.*?\?>)|                 # match <?foo?> " +
             RepeatString(@" 
             (<[A-Za-z\/!$](?:[^<>]|", _nestDepth) + RepeatString(@")*>)", _nestDepth) +
@@ -800,7 +775,7 @@ namespace MarkdownSharp
                 \[
                     (.*?)                   # id = $3
                 \]
-            )", GetNestedBracketsPattern()), RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+            )", GetNestedBracketsPattern()), RegexOptions.Singleline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
         private static Regex _anchorInline = new Regex(string.Format(@"
                 (                           # wrap whole match in $1
@@ -819,14 +794,14 @@ namespace MarkdownSharp
                         )?                  # title is optional
                     \)
                 )", GetNestedBracketsPattern(), GetNestedParensPattern()),
-                  RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+                  RegexOptions.Singleline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
         private static Regex _anchorRefShortcut = new Regex(@"
             (                               # wrap whole match in $1
               \[
                  ([^\[\]]+)                 # link text = $2; can't contain [ or ]
               \]
-            )", RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+            )", RegexOptions.Singleline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
         /// <summary>
         /// Turn Markdown link shortcuts into HTML anchor tags
@@ -838,9 +813,6 @@ namespace MarkdownSharp
         /// </remarks>
         private string DoAnchors(string text)
         {
-            if (!text.Contains("["))
-                return text;
-
             // First, handle reference-style links: [link text] [id]
             text = _anchorRef.Replace(text, new MatchEvaluator(AnchorRefEvaluator));
 
@@ -854,15 +826,10 @@ namespace MarkdownSharp
             return text;
         }
 
-        private string SaveFromAutoLinking(string s)
-        {
-            return s.Replace("://", AutoLinkPreventionMarker);
-        }
-
         private string AnchorRefEvaluator(Match match)
         {
             string wholeMatch = match.Groups[1].Value;
-            string linkText = SaveFromAutoLinking(match.Groups[2].Value);
+            string linkText = match.Groups[2].Value;
             string linkID = match.Groups[3].Value.ToLowerInvariant();
 
             string result;
@@ -875,14 +842,14 @@ namespace MarkdownSharp
             {
                 string url = _urls[linkID];
 
-                url = AttributeSafeUrl(url);
-
+                url = EncodeProblemUrlChars(url);
+                url = EscapeBoldItalic(url);                
                 result = "<a href=\"" + url + "\"";
 
                 if (_titles.ContainsKey(linkID))
                 {
-                    string title = AttributeEncode(_titles[linkID]);
-                    title = AttributeEncode(EscapeBoldItalic(title));
+                    string title = _titles[linkID];
+                    title = EscapeBoldItalic(title);
                     result += " title=\"" + title + "\"";
                 }
 
@@ -897,7 +864,7 @@ namespace MarkdownSharp
         private string AnchorRefShortcutEvaluator(Match match)
         {
             string wholeMatch = match.Groups[1].Value;
-            string linkText = SaveFromAutoLinking(match.Groups[2].Value);
+            string linkText = match.Groups[2].Value;
             string linkID = Regex.Replace(linkText.ToLowerInvariant(), @"[ ]*\n[ ]*", " ");  // lower case and remove newlines / extra spaces
 
             string result;
@@ -906,13 +873,13 @@ namespace MarkdownSharp
             {
                 string url = _urls[linkID];
 
-                url = AttributeSafeUrl(url);
-
+                url = EncodeProblemUrlChars(url);
+                url = EscapeBoldItalic(url);                
                 result = "<a href=\"" + url + "\"";
 
                 if (_titles.ContainsKey(linkID))
                 {
-                    string title = AttributeEncode(_titles[linkID]);
+                    string title = _titles[linkID];
                     title = EscapeBoldItalic(title);
                     result += " title=\"" + title + "\"";
                 }
@@ -928,21 +895,21 @@ namespace MarkdownSharp
 
         private string AnchorInlineEvaluator(Match match)
         {
-            string linkText = SaveFromAutoLinking(match.Groups[2].Value);
+            string linkText = match.Groups[2].Value;
             string url = match.Groups[3].Value;
             string title = match.Groups[6].Value;
             string result;
 
+            url = EncodeProblemUrlChars(url);
+            url = EscapeBoldItalic(url);
             if (url.StartsWith("<") && url.EndsWith(">"))
                 url = url.Substring(1, url.Length - 2); // remove <>'s surrounding URL, if present            
-
-            url = AttributeSafeUrl(url);
 
             result = string.Format("<a href=\"{0}\"", url);
 
             if (!String.IsNullOrEmpty(title))
             {
-                title = AttributeEncode(title);
+                title = title.Replace("\"", "&quot;");
                 title = EscapeBoldItalic(title);
                 result += string.Format(" title=\"{0}\"", title);
             }
@@ -964,7 +931,7 @@ namespace MarkdownSharp
                         (.*?)       # id = $3
                     \]
 
-                    )", RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+                    )", RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
 
         private static Regex _imagesInline = new Regex(String.Format(@"
               (                     # wrap whole match in $1
@@ -984,7 +951,7 @@ namespace MarkdownSharp
                     )?              # title is optional
                 \)
               )", GetNestedParensPattern()),
-                  RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+                  RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Turn Markdown image shortcuts into HTML img tags. 
@@ -995,9 +962,6 @@ namespace MarkdownSharp
         /// </remarks>
         private string DoImages(string text)
         {
-            if (!text.Contains("!["))
-                return text;
-
             // First, handle reference-style labeled images: ![alt text][id]
             text = _imagesRef.Replace(text, new MatchEvaluator(ImageReferenceEvaluator));
 
@@ -1008,41 +972,43 @@ namespace MarkdownSharp
             return text;
         }
 
-        // This prevents the creation of horribly broken HTML when some syntax ambiguities
-        // collide. It likely still doesn't do what the user meant, but at least we're not
-        // outputting garbage.
-        private string EscapeImageAltText(string s)
-        {
-            s = EscapeBoldItalic(s);
-            s = Regex.Replace(s, @"[\[\]()]", m => _escapeTable[m.ToString()]);
-            return s;
-        }            
-
         private string ImageReferenceEvaluator(Match match)
         {
             string wholeMatch = match.Groups[1].Value;
             string altText = match.Groups[2].Value;
             string linkID = match.Groups[3].Value.ToLowerInvariant();
+            string result;
 
             // for shortcut links like ![this][].
             if (linkID == "")
                 linkID = altText.ToLowerInvariant();
 
+            altText = altText.Replace("\"", "&quot;");
+
             if (_urls.ContainsKey(linkID))
             {
                 string url = _urls[linkID];
-                string title = null;
+                url = EncodeProblemUrlChars(url);
+                url = EscapeBoldItalic(url);                
+                result = string.Format("<img src=\"{0}\" alt=\"{1}\"", url, altText);
 
                 if (_titles.ContainsKey(linkID))
-                    title = _titles[linkID];
+                {
+                    string title = _titles[linkID];
+                    title = EscapeBoldItalic(title);
 
-                return ImageTag(url, altText, title);
+                    result += string.Format(" title=\"{0}\"", title);
+                }
+
+                result += _emptyElementSuffix;
             }
             else
             {
                 // If there's no such link ID, leave intact:
-                return wholeMatch;
+                result = wholeMatch;
             }
+
+            return result;
         }
 
         private string ImageInlineEvaluator(Match match)
@@ -1050,24 +1016,26 @@ namespace MarkdownSharp
             string alt = match.Groups[2].Value;
             string url = match.Groups[3].Value;
             string title = match.Groups[6].Value;
+            string result;
 
+            alt = alt.Replace("\"", "&quot;");
+            title = title.Replace("\"", "&quot;");
+            
             if (url.StartsWith("<") && url.EndsWith(">"))
                 url = url.Substring(1, url.Length - 2);    // Remove <>'s surrounding URL, if present
+            url = EncodeProblemUrlChars(url);
+            url = EscapeBoldItalic(url);
 
-            return ImageTag(url, alt, title);
-        }
+            result = string.Format("<img src=\"{0}\" alt=\"{1}\"", url, alt);
 
-        private string ImageTag(string url, string altText, string title)
-        {
-            altText = EscapeImageAltText(AttributeEncode(altText));
-            url = AttributeSafeUrl(url);
-            var result = string.Format("<img src=\"{0}\" alt=\"{1}\"", url, altText);
             if (!String.IsNullOrEmpty(title))
             {
-                title = AttributeEncode(EscapeBoldItalic(title));
+                title = EscapeBoldItalic(title);
                 result += string.Format(" title=\"{0}\"", title);
             }
+
             result += _emptyElementSuffix;
+
             return result;
         }
 
@@ -1151,7 +1119,6 @@ namespace MarkdownSharp
         {
             return _horizontalRules.Replace(text, "<hr" + _emptyElementSuffix + "\n");
         }
-
         private static string _wholeList = string.Format(@"
             (                               # $1 = whole list
               (                             # $2
@@ -1196,22 +1163,16 @@ namespace MarkdownSharp
         private string ListEvaluator(Match match)
         {
             string list = match.Groups[1].Value;
-            string marker = match.Groups[3].Value;
-            string listType = Regex.IsMatch(marker, _markerUL) ? "ul" : "ol";
+            string listType = Regex.IsMatch(match.Groups[3].Value, _markerUL) ? "ul" : "ol";
             string result;
-            string start = "";
-            if (listType == "ol")
-            {
-                var firstNumber = int.Parse(marker.Substring(0, marker.Length - 1));
-                if (firstNumber != 1 && firstNumber != 0)
-                    start = " start=\"" + firstNumber + "\"";
-            }
 
+            // Turn double returns into triple returns, so that we can make a
+            // paragraph for the last item in a list, if necessary:
+            list = Regex.Replace(list, @"\n{2,}", "\n\n\n");
             result = ProcessListItems(list, listType == "ul" ? _markerUL : _markerOL);
 
-            result = string.Format("<{0}{1}>\n{2}</{0}>\n", listType, start, result);
+            result = string.Format("<{0}>\n{1}</{0}>\n", listType, result);
             return result;
-
         }
 
         /// <summary>
@@ -1247,35 +1208,38 @@ namespace MarkdownSharp
             list = Regex.Replace(list, @"\n{2,}\z", "\n");
 
             string pattern = string.Format(
-              @"(^[ ]*)                    # leading whitespace = $1
-                ({0}) [ ]+                 # list marker = $2
-                ((?s:.+?)                  # list item text = $3
-                (\n+))      
-                (?= (\z | \1 ({0}) [ ]+))", marker);
-
-            bool lastItemHadADoubleNewline = false;
-
-            // has to be a closure, so subsequent invocations can share the bool
-            MatchEvaluator ListItemEvaluator = (Match match) =>
-            {
-                string item = match.Groups[3].Value;
-
-                bool endsWithDoubleNewline = item.EndsWith("\n\n");
-                bool containsDoubleNewline = endsWithDoubleNewline || item.Contains("\n\n");
-
-                var loose = containsDoubleNewline || lastItemHadADoubleNewline;
-                // we could correct any bad indentation here..
-                item = RunBlockGamut(Outdent(item) + "\n", unhash: false, createParagraphs: loose);
-
-                lastItemHadADoubleNewline = endsWithDoubleNewline;
-                return string.Format("<li>{0}</li>\n", item);
-            };
+              @"(\n)?                      # leading line = $1
+                (^[ ]*)                    # leading whitespace = $2
+                ({0}) [ ]+                 # list marker = $3
+                ((?s:.+?)                  # list item text = $4
+                (\n{{1,2}}))      
+                (?= \n* (\z | \2 ({0}) [ ]+))", marker);
 
             list = Regex.Replace(list, pattern, new MatchEvaluator(ListItemEvaluator),
                                   RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline);
             _listLevel--;
             return list;
         }
+
+        private string ListItemEvaluator(Match match)
+        {
+            string item = match.Groups[4].Value;
+            string leadingLine = match.Groups[1].Value;
+
+            if (!String.IsNullOrEmpty(leadingLine) || Regex.IsMatch(item, @"\n{2,}"))
+                // we could correct any bad indentation here..
+                item = RunBlockGamut(Outdent(item) + "\n");
+            else
+            {
+                // recursion for sub-lists
+                item = DoLists(Outdent(item));
+                item = item.TrimEnd('\n');
+                item = RunSpanGamut(item);
+            }
+
+            return string.Format("<li>{0}</li>\n", item);
+        }
+
 
         private static Regex _codeBlock = new Regex(string.Format(@"
                     (?:\n\n|\A\n?)
@@ -1285,7 +1249,7 @@ namespace MarkdownSharp
                         .*\n+
                     )+
                     )
-                    ((?=^[ ]{{0,{0}}}[^ \t\n])|\Z) # Lookahead for non-space at line-start, or end of doc",
+                    ((?=^[ ]{{0,{0}}}\S)|\Z) # Lookahead for non-space at line-start, or end of doc",
                     _tabWidth), RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
         /// <summary>
@@ -1306,11 +1270,252 @@ namespace MarkdownSharp
 
             return string.Concat("\n\n<pre><code>", codeBlock, "\n</code></pre>\n\n");
         }
+		private static readonly Regex TableRules = new Regex(@"
+(?<header>              #table header
+  ^                #start of line
+  (?:              #a table line starts with
+    [^\n\r\|\\]   #any sign that is not a newline or a pipe or a backquote
+    |              #OR
+    \\[^\n\r]      #escaped character
+  )*               #table line start
+  \|               #pipe sign
+  [^\n\r]*         #rest of the line
+)\r?\n             #until end of line            
+                   
+(?<divider>        #table divider
+  ^                #start of line
+  [\|\-\+\:\.]     #start with pipe separator, aligment(:) and separators (-.+)
+  [\s\-\+\:\.]*    #continue separators (spaces are ok)
+  \|               #until first column separator
+  [ \-\+\|\:\.]*   #then continue with divider valid characters 
+)\r?\n             #until end of line            
+                   
+(?<rows>           #Rows
+(?:
+  ^                #start of line
+  (?:              #a table line starts with
+    [^\n\r\|\\]   #any sign that is not a newline or a pipe or a backquote
+    |              #OR
+    \\[^\n\r]      #escaped character
+  )*               #table line start
+  \|               #pipe sign
+  [^\n\r]*         #rest of the line
+  \r?\n?           #until end of line            
+)+                 #any number of lines (blank lines breaks the table)
+)
+", RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline | RegexOptions.Compiled);
 
+		private static readonly Regex SplitTableCells = new Regex(@"
+(?<=             #separator is only valid if prefix is 
+  ^				 #start of line
+  |              #or
+  [^\|\\]        #any character that is not a pipe or backslash
+  (?:\\\\)*      #any trailing double backquotes are eaten (odd numbers escapes the pipe)
+)                #end of prefix
+\|               #pipe is the separator
+", RegexOptions.IgnorePatternWhitespace| RegexOptions.Compiled);
+		private static readonly Regex AlignmentRule=new Regex(@"^[:]?-+[:]?$",RegexOptions.Compiled);
+			private string DoTables(string text) {
+				return TableRules.Replace(text, TableEvaluator);
+			}
+
+		private string TableEvaluator(Match match) {
+			var headerString = match.Groups["header"].Value;
+			var dividerString = match.Groups["divider"].Value;
+			var rowsString = match.Groups["rows"].Value;
+			var lines = Regex.Split(rowsString, @"[\n\r]+").Where(l=>!string.IsNullOrEmpty(l)).ToList();
+			var headerCells = SplitTableCells.Split(headerString);
+			var dividerCells = SplitTableCells.Split(dividerString);
+
+			var headers = headerCells.Select(v => string.IsNullOrEmpty(v) ? null : v.Trim()).ToList();
+			var alignments = CheckAlignmentRow(dividerCells);
+		    var styles = CheckStyleRow(dividerCells);
+			var rows = new List<List<string>>();
+			
+			foreach (var line in lines) {
+				var cells = SplitTableCells.Split(line);
+				var row = cells.Select(v => string.IsNullOrEmpty(v) ? null : v.Trim()).ToList();
+				
+				////check if row contains aligments
+				//if (alignments == null) {
+				//    alignments = CheckAlignmentRow(row);
+				//    if(alignments!=null)
+				//        continue;
+				//}
+				////if aligments is not found and headers 
+				//if (alignments == null && headers == null) {
+				//    headers=row;
+				//    continue;
+				//}
+				rows.Add(row);
+			}
+			//remove first column?
+			if (ValueIsEmpty(headers, 0) && ValueIsEmpty(alignments, 0) && rows.All(r => ValueIsEmpty(r, 0))) {
+				RemoveColumn(headers,0);
+				RemoveColumn(alignments, 0);
+                RemoveColumn(styles,0);
+				rows.ForEach(r=>RemoveColumn(r,0));
+			}
+			//remove lastColumn
+			if (ValueIsEmpty(headers, -1) && ValueIsEmpty(alignments, -1) && rows.All(r => ValueIsEmpty(r, -1))) {
+				RemoveColumn(headers, -1);
+				RemoveColumn(alignments, -1);
+                RemoveColumn(styles, -1);
+                rows.ForEach(r => RemoveColumn(r, -1));
+			}
+            //merge rows with row separators
+		    var firstRow = 0;
+		    for (int i = 0; i < rows.Count; i++) {
+		        var row = rows[i];
+		        if (IsSeparatorRow(row)) {
+		            var joinedRow = JoinRows(rows, firstRow, i - 1);
+                    for(var j=i;j>=firstRow;j--)
+                        rows.RemoveAt(j);
+                    rows.Insert(firstRow,joinedRow);
+                    i = firstRow;
+                    firstRow++;
+		        }
+		    }
+			var sb = new StringBuilder();
+			sb.Append("<table>\n");
+			//if alignments are specified, add a colgroup
+			if (alignments != null && alignments.Any(c => !string.IsNullOrEmpty(c))) {
+				sb.Append("<colgroup>\n");
+				foreach (var alignment in alignments) {
+					sb.Append("<col");
+					if (!string.IsNullOrEmpty(alignment))
+						sb.AppendFormat(" align=\"{0}\"", alignment);
+					sb.Append("/>\n");
+				}
+				sb.Append("</colgroup>\n");
+			}
+			//headers
+			if (headers.Count > 0) {
+				sb.Append("<thead>\n");
+				sb.Append("<tr>");
+				for(var i=0;i<headers.Count;i++) {
+				    var header = headers[i];
+				    var attributes = GetAttributes(styles, i);
+					var h = header ?? string.Empty;
+					sb.AppendFormat("<th{1}>{0}</th>", RunSpanGamut(h),attributes);
+				}
+				sb.Append("</tr>\n");
+				sb.Append("</thead>\n");
+			}
+			//rows
+			sb.Append("<tbody>\n");
+			foreach (var row in rows) {
+				sb.Append("<tr>");
+				for (var i=0;i<row.Count;i++) {
+				    var cell = row[i];
+					var c = cell ?? string.Empty;
+                    var attributes = GetAttributes(styles, i);
+                    sb.AppendFormat("<td{1}>{0}</td>", RunSpanGamut(c),attributes);
+				}
+				sb.Append("</tr>\n");
+				
+			}
+			sb.Append("</tbody>\n");
+			sb.Append("</table>\n");
+			return sb.ToString();
+		}
+
+        private string GetAttributes(List<string> styles, int index) {
+            if (styles == null || styles.Count <= index) return string.Empty;
+            var style = styles[index];
+            return string.Format(@" style=""{0}""", style);
+        }
+
+        private List<string> JoinRows(IList<List<string>> rows, int firstRow, int lastRow) {
+            var joinedRow = new List<string>();
+            for (var i = firstRow; i <= lastRow; i++) {
+                for (int j = 0; j < rows[i].Count; j++) {
+                    var cell = rows[i][j];
+                    if (j >= joinedRow.Count) {
+                        joinedRow.Add(cell);
+                    } else {
+                        if(!string.IsNullOrEmpty(cell))
+                            joinedRow[j] += " " + cell;
+                    }
+                }
+            }
+            return joinedRow;
+        }
+
+        private bool IsSeparatorRow(List<string> row) {
+            foreach (var cell in row) {
+                if (!Regex.IsMatch(cell,@"^\s*[\-]+\s*$")) return false;
+            }
+            return true;
+        }
+
+        private void RemoveColumn(List<string> list, int index ) {
+			if (list == null||list.Count==0)
+				return;
+			//negative values counts from behind
+			if (index < 0)
+				index = list.Count + index;
+			if (index >= list.Count || index < 0)
+				return;
+			list.RemoveAt(index);
+		}
+		private bool ValueIsEmpty(IList<string> list, int index) {
+			if (list == null)
+				return true;
+			//negative values counts from behind
+			if (index < 0)
+				index = list.Count + index;
+			if (index>=list.Count)
+				return true;
+			if (string.IsNullOrEmpty(list[index]))
+				return true;
+			return false;
+		}
+        public static Regex NoWrapRule = new Regex(@"^\s*\++\s*$");
+
+        private List<string> CheckStyleRow(IEnumerable<string> cells) {
+            var list = new List<string>();
+            foreach (var cell in cells) {
+                if (string.IsNullOrEmpty(cell)) {
+                    list.Add(null);
+                    continue;
+                }
+                if (NoWrapRule.IsMatch(cell)) {
+                    list.Add("white-space:nowrap;");
+                    continue;
+                }
+            }
+            return list;
+        }
+
+        private List<string> CheckAlignmentRow(IEnumerable<string> cells) {
+			var list = new List<string>();
+					foreach (var cell in cells) {
+						if (string.IsNullOrEmpty(cell)) {
+							list.Add(string.Empty);
+							continue;
+						}
+						var align = CheckAlignmentCell(cell);
+						if (align == null)
+							return null;
+						list.Add(align);
+					}
+			return list;
+		}
+		private string CheckAlignmentCell(string cell) {
+			if (string.IsNullOrEmpty(cell) || !AlignmentRule.IsMatch(cell))
+				return null;
+			if (cell[0] == ':' && cell[cell.Length - 1] == ':')
+				return "center";
+			if (cell[0] == ':' )
+				return "left";
+			if (cell[cell.Length - 1] == ':')
+				return "right";
+			return "";
+		}
         private static Regex _codeSpan = new Regex(@"
-                    (?<![\\`])   # Character before opening ` can't be a backslash or backtick
+                    (?<!\\)   # Character before opening ` can't be a backslash
                     (`+)      # $1 = Opening run of `
-                    (?!`)     # and no more backticks -- match the full run
                     (.+?)     # $2 = The code block
                     (?<!`)
                     \1
@@ -1352,47 +1557,32 @@ namespace MarkdownSharp
             span = Regex.Replace(span, @"^[ ]*", ""); // leading whitespace
             span = Regex.Replace(span, @"[ ]*$", ""); // trailing whitespace
             span = EncodeCode(span);
-            span = SaveFromAutoLinking(span); // to prevent auto-linking. Not necessary in code *blocks*, but in code spans.
 
             return string.Concat("<code>", span, "</code>");
         }
 
+
         private static Regex _bold = new Regex(@"(\*\*|__) (?=\S) (.+?[*_]*) (?<=\S) \1",
             RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
-        private static Regex _semiStrictBold = new Regex(@"(?=.[*_]|[*_])(^|(?=\W__|(?!\*)[\W_]\*\*|\w\*\*\w).)(\*\*|__)(?!\2)(?=\S)((?:|.*?(?!\2).)(?=\S_|\w|\S\*\*(?:[\W_]|$)).)(?=__(?:\W|$)|\*\*(?:[^*]|$))\2",
-            RegexOptions.Singleline | RegexOptions.Compiled);
-        private static Regex _strictBold = new Regex(@"(^|[\W_])(?:(?!\1)|(?=^))(\*|_)\2(?=\S)(.*?\S)\2\2(?!\2)(?=[\W_]|$)",
-            RegexOptions.Singleline | RegexOptions.Compiled);
+        private static Regex _strictBold = new Regex(@"([\W_]|^) (\*\*|__) (?=\S) ([^\r]*?\S[\*_]*) \2 ([\W_]|$)",
+            RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
 
         private static Regex _italic = new Regex(@"(\*|_) (?=\S) (.+?) (?<=\S) \1",
             RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
-        private static Regex _semiStrictItalic = new Regex(@"(?=.[*_]|[*_])(^|(?=\W_|(?!\*)(?:[\W_]\*|\D\*(?=\w)\D)).)(\*|_)(?!\2\2\2)(?=\S)((?:(?!\2).)*?(?=[^\s_]_|(?=\w)\D\*\D|[^\s*]\*(?:[\W_]|$)).)(?=_(?:\W|$)|\*(?:[^*]|$))\2",
-            RegexOptions.Singleline | RegexOptions.Compiled);
-        private static Regex _strictItalic = new Regex(@"(^|[\W_])(?:(?!\1)|(?=^))(\*|_)(?=\S)((?:(?!\2).)*?\S)\2(?!\2)(?=[\W_]|$)",
-            RegexOptions.Singleline | RegexOptions.Compiled);
+        private static Regex _strictItalic = new Regex(@"([\W_]|^) (\*|_) (?=\S) ([^\r\*_]*?\S) \2 ([\W_]|$)",
+            RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Turn Markdown *italics* and **bold** into HTML strong and em tags
         /// </summary>
         private string DoItalicsAndBold(string text)
         {
-            if (!(text.Contains("*") || text.Contains("_")))
-                return text;
+
             // <strong> must go first, then <em>
             if (_strictBoldItalic)
             {
-                if (_asteriskIntraWordEmphasis)
-                {
-                    text = _semiStrictBold.Replace(text, "$1<strong>$3</strong>");
-                    text = _semiStrictItalic.Replace(text, "$1<em>$3</em>");
-
-                }
-                else
-                {
-                    text = _strictBold.Replace(text, "$1<strong>$3</strong>");
-                    text = _strictItalic.Replace(text, "$1<em>$3</em>");
-
-                }
+                text = _strictBold.Replace(text, "$1<strong>$3</strong>$4");
+                text = _strictItalic.Replace(text, "$1<em>$3</em>$4");
             }
             else
             {
@@ -1445,11 +1635,7 @@ namespace MarkdownSharp
             // These leading spaces screw with <pre> content, so we need to fix that:
             bq = Regex.Replace(bq, @"(\s*<pre>.+?</pre>)", new MatchEvaluator(BlockQuoteEvaluator2), RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline);
 
-            bq = string.Format("<blockquote>\n{0}\n</blockquote>", bq);
-            string key = GetHashKey(bq, isHtmlBlock: true);
-            _htmlBlocks[key] = bq;
-
-            return "\n\n" + key + "\n\n";
+            return string.Format("<blockquote>\n{0}\n</blockquote>\n\n", bq);
         }
 
         private string BlockQuoteEvaluator2(Match match)
@@ -1457,59 +1643,8 @@ namespace MarkdownSharp
             return Regex.Replace(match.Groups[1].Value, @"^  ", "", RegexOptions.Multiline);
         }
 
-        private const string _charInsideUrl = @"[-A-Z0-9+&@#/%?=~_|\[\]\(\)!:,\.;" + "\x1a]";
-        private const string _charEndingUrl = "[-A-Z0-9+&@#/%=~_|\\[\\])]";
-
-        private static Regex _autolinkBare = new Regex(@"(<|="")?\b(https?|ftp)(://" + _charInsideUrl + "*" + _charEndingUrl + ")(?=$|\\W)",
+        private static Regex _autolinkBare = new Regex(@"(^|\s)(https?|ftp)(://[-A-Z0-9+&@#/%?=~_|\[\]\(\)!:,\.;]*[-A-Z0-9+&@#/%=~_|\[\]])($|\W)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-        private static Regex _endCharRegex = new Regex(_charEndingUrl, RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-        private static string handleTrailingParens(Match match)
-        {
-            // The first group is essentially a negative lookbehind -- if there's a < or a =", we don't touch this.
-            // We're not using a *real* lookbehind, because of links with in links, like <a href="http://web.archive.org/web/20121130000728/http://www.google.com/">
-            // With a real lookbehind, the full link would never be matched, and thus the http://www.google.com *would* be matched.
-            // With the simulated lookbehind, the full link *is* matched (just not handled, because of this early return), causing
-            // the google link to not be matched again.
-            if (match.Groups[1].Success)
-                return match.Value;
-
-            var protocol = match.Groups[2].Value;
-            var link = match.Groups[3].Value;
-            if (!link.EndsWith(")"))
-                return "<" + protocol + link + ">";
-            var level = 0;
-            foreach (Match c in Regex.Matches(link, "[()]"))
-            {
-                if (c.Value == "(")
-                {
-                    if (level <= 0)
-                        level = 1;
-                    else
-                        level++;
-                }
-                else
-                {
-                    level--;
-                }
-            }
-            var tail = "";
-            if (level < 0)
-            {
-                link = Regex.Replace(link, @"\){1," + (-level) + "}$", m => { tail = m.Value; return ""; });
-            }
-            if (tail.Length > 0)
-            {
-                var lastChar = link[link.Length - 1];
-                if (!_endCharRegex.IsMatch(lastChar.ToString()))
-                {
-                    tail = lastChar + tail;
-                    link = link.Substring(0, link.Length - 1);
-                }
-            }
-            return "<" + protocol + link + ">" + tail;
-        }
 
         /// <summary>
         /// Turn angle-delimited URLs into HTML anchor tags
@@ -1525,7 +1660,7 @@ namespace MarkdownSharp
                 // fixup arbitrary URLs by adding Markdown < > so they get linked as well
                 // note that at this point, all other URL in the text are already hyperlinked as <a href=""></a>
                 // *except* for the <http://www.foo.com> case
-                text = _autolinkBare.Replace(text, handleTrailingParens);
+                text = _autolinkBare.Replace(text, @"$1<$2$3>$4");
             }
 
             // Hyperlinks: <http://foo.com>
@@ -1552,8 +1687,7 @@ namespace MarkdownSharp
         private string HyperlinkEvaluator(Match match)
         {
             string link = match.Groups[1].Value;
-            string url = AttributeSafeUrl(link);
-            return string.Format("<a href=\"{0}\">{1}</a>", url, link);
+            return string.Format("<a href=\"{0}\">{0}</a>", link);
         }
 
         private string EmailEvaluator(Match match)
@@ -1653,7 +1787,7 @@ namespace MarkdownSharp
         }
 
 
-        private static Regex _amps = new Regex(@"&(?!((#[0-9]+)|(#[xX][a-fA-F0-9]+)|([a-zA-Z][a-zA-Z0-9]*));)", RegexOptions.ExplicitCapture | RegexOptions.Compiled);
+        private static Regex _amps = new Regex(@"&(?!(#[0-9]+)|(#[xX][a-fA-F0-9])|([a-zA-Z][a-zA-Z0-9]*);)", RegexOptions.ExplicitCapture | RegexOptions.Compiled);
         private static Regex _angles = new Regex(@"<(?![A-Za-z/?\$!])", RegexOptions.ExplicitCapture | RegexOptions.Compiled);
 
         /// <summary>
@@ -1666,7 +1800,7 @@ namespace MarkdownSharp
             return s;
         }
 
-        private static Regex _backslashEscapes;
+        private static Regex _backslashEscapes; 
 
         /// <summary>
         /// Encodes any escaped characters such as \`, \*, \[ etc
@@ -1679,8 +1813,8 @@ namespace MarkdownSharp
         {
             return _backslashEscapeTable[match.Value];
         }
-
-        private static Regex _unescapes = new Regex("\x1A" + "E\\d+E", RegexOptions.Compiled);
+       
+        private static Regex _unescapes = new Regex("\x1A\\d+\x1A", RegexOptions.Compiled);
 
         /// <summary>
         /// swap back in all the special characters we've hidden
@@ -1705,18 +1839,35 @@ namespace MarkdownSharp
             return s;
         }
 
-        private static string AttributeEncode(string s)
+        private static char[] _problemUrlChars = @"""'*()[]$:_".ToCharArray();
+
+        /// <summary>
+        /// hex-encodes some unusual "problem" chars in URLs to avoid URL detection problems 
+        /// </summary>
+        private string EncodeProblemUrlChars(string url)
         {
-            return s.Replace(">", "&gt;").Replace("<", "&lt;").Replace("\"", "&quot;").Replace("'", "&#39;");
+            if (!_encodeProblemUrlCharacters) return url;
+
+            var sb = new StringBuilder(url.Length);
+            bool encode;
+            char c;
+
+            for (int i = 0; i < url.Length; i++)
+            {
+                c = url[i];
+                encode = Array.IndexOf(_problemUrlChars, c) != -1;
+                if (encode && c == ':' && i < url.Length - 1)
+                    encode = !(url[i + 1] == '/') && !(url[i + 1] >= '0' && url[i + 1] <= '9');
+
+                if (encode)
+                    sb.Append("%" + String.Format("{0:x}", (byte)c));
+                else
+                    sb.Append(c);                
+            }
+
+            return sb.ToString();
         }
 
-        private static string AttributeSafeUrl(string s)
-        {
-            s = AttributeEncode(s);
-            foreach (var c in "*_:()[]")
-                s = s.Replace(c.ToString(), _escapeTable[c.ToString()]);
-            return s;
-        }
 
         /// <summary>
         /// Within tags -- meaning between &lt; and &gt; -- encode [\ ` * _] so they 
@@ -1739,10 +1890,6 @@ namespace MarkdownSharp
                 if (token.Type == TokenType.Tag)
                 {
                     value = value.Replace(@"\", _escapeTable[@"\"]);
-                    
-                    if (_autoHyperlink && value.StartsWith("<!")) // escape slashes in comments to prevent autolinking there -- http://meta.stackexchange.com/questions/95987/html-comment-containing-url-breaks-if-followed-by-another-html-comment
-                        value = value.Replace("/", _escapeTable["/"]);
-                    
                     value = Regex.Replace(value, "(?<=.)</?code>(?=.)", _escapeTable[@"`"]);
                     value = EscapeBoldItalic(value);
                 }
@@ -1760,7 +1907,7 @@ namespace MarkdownSharp
         /// removes any blank lines (only spaces) in the text
         /// </summary>
         private string Normalize(string text)
-        {
+        {            
             var output = new StringBuilder(text.Length);
             var line = new StringBuilder();
             bool valid = false;

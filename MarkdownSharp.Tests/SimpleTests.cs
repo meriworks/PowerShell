@@ -1,7 +1,7 @@
 ﻿using MarkdownSharp;
 using NUnit.Framework;
 
-namespace MarkdownSharpTests
+namespace MarkdownSharp.Tests
 {
     [TestFixture]
     public class SimpleTests : BaseTest
@@ -208,5 +208,148 @@ namespace MarkdownSharpTests
 
             Assert.AreEqual(expected, actual);
         }
-    }
+    	[Test]
+    	public void SimpleTable() {
+			const string input = @"
+|First Header  | Second Header|
+|------------- | -------------|
+|Content Cell  | Content Cell|
+|Content Cell  | Content Cell|
+";
+    		const string expected = "<table>\n<thead>\n<tr><th>First Header</th><th>Second Header</th></tr>\n</thead>\n"+
+"<tbody>\n<tr><td>Content Cell</td><td>Content Cell</td></tr>\n<tr><td>Content Cell</td><td>Content Cell</td></tr>\n</tbody>\n</table>\n";
+			var actual = m.Transform(input);
+
+			Assert.AreEqual(expected, actual);
+		}
+
+        [Test]
+        public void SimpleTableWithNoWrap() {
+            const string input = @"
+|First Header  | Second Header|
+| ++++++++++++ | -------------|
+|Content Cell  | Content Cell|
+|Content Cell  | Content Cell|
+";
+            const string expected = "<table>\n<thead>\n<tr><th style=\"white-space:nowrap;\">First Header</th><th>Second Header</th></tr>\n</thead>\n" +
+"<tbody>\n<tr><td style=\"white-space:nowrap;\">Content Cell</td><td>Content Cell</td></tr>\n<tr><td style=\"white-space:nowrap;\">Content Cell</td><td>Content Cell</td></tr>\n</tbody>\n</table>\n";
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
+        [Test]
+        public void SimpleTableWithNoWrap2() {
+            const string input = @"
+|First Header  | Second Header|
+| ++++++++++++ | ++++++++++++ |
+|Content Cell  | Content Cell|
+|Content Cell  | Content Cell|
+";
+            const string expected = "<table>\n<thead>\n<tr><th style=\"white-space:nowrap;\">First Header</th><th style=\"white-space:nowrap;\">Second Header</th></tr>\n</thead>\n" +
+"<tbody>\n<tr><td style=\"white-space:nowrap;\">Content Cell</td><td style=\"white-space:nowrap;\">Content Cell</td></tr>\n<tr><td style=\"white-space:nowrap;\">Content Cell</td><td style=\"white-space:nowrap;\">Content Cell</td></tr>\n</tbody>\n</table>\n";
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
+        [Test]
+		public void SimplestTable() {
+			const string input = @"
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
+";
+			const string expected = "<table>\n<thead>\n<tr><th>First Header</th><th>Second Header</th></tr>\n</thead>\n" +
+"<tbody>\n<tr><td>Content Cell</td><td>Content Cell</td></tr>\n<tr><td>Content Cell</td><td>Content Cell</td></tr>\n</tbody>\n</table>\n";
+			var actual = m.Transform(input);
+
+			Assert.AreEqual(expected, actual);
+		}
+		[Test]
+		public void SimpleTableWithEscapes() {
+			const string input = @"|My\|Name | My\\Backslash\\|
+|------------- | -------------|
+|Content Cell  | Content Cell|
+|Content Cell  | Content Cell|
+";
+			const string expected = "<table>\n<thead>\n<tr><th>My|Name</th><th>My\\Backslash\\</th></tr>\n</thead>\n" +
+"<tbody>\n<tr><td>Content Cell</td><td>Content Cell</td></tr>\n<tr><td>Content Cell</td><td>Content Cell</td></tr>\n</tbody>\n</table>\n";
+
+			var actual = m.Transform(input);
+
+			Assert.AreEqual(expected, actual);
+		}
+
+
+        [Test]
+        public void MultiRowTable() {
+            const string input = @"| Role			| Description															| ImageVault component
+|--------------	|---------------------------------------------------------------------	|-----------------------------
+| Resource		| An entity capable of granting access to a protected resource.			| User using ImageVault 
+| owner			| When the resource owner is a person, it is referred to as an			|
+|				| end-user.																|
+|--------------	|---------------------------------------------------------------------	|-----------------------------
+| Resource		| The server hosting the protected resources, capable of accepting		| ImageVault Core
+| server		| and responding to protected resource requests using access tokens.	|
+|--------------	|---------------------------------------------------------------------	|-----------------------------
+| Client		| An application making protected resource requests on behalf of the	| ImageVault Ui ImageVault
+|				| resource owner and with its authorization.  The term ""client"" does	| ImageVault Plugin
+|				| not imply any particular implementation characteristics (e.g.,		| ImageVault EPiServer 7 Add-on
+|				| whether the application executes on a server, a desktop, or other		| Any 3rd part application
+|				| devices).																|
+|--------------	|---------------------------------------------------------------------	|-----------------------------
+| Authorization	| The server issuing access tokens to the client after successfully		| ImageVault Core
+| server		| authenticating the resource owner and obtaining authorization.		|
+|--------------	|---------------------------------------------------------------------	|-----------------------------
+";
+            string expected = @"<table>
+<thead>
+<tr><th>Role</th><th>Description</th><th>ImageVault component</th></tr>
+</thead>
+<tbody>
+<tr><td>Resource owner</td><td>An entity capable of granting access to a protected resource. When the resource owner is a person, it is referred to as an end-user.</td><td>User using ImageVault</td></tr>
+<tr><td>Resource server</td><td>The server hosting the protected resources, capable of accepting and responding to protected resource requests using access tokens.</td><td>ImageVault Core</td></tr>
+<tr><td>Client</td><td>An application making protected resource requests on behalf of the resource owner and with its authorization.  The term ""client"" does not imply any particular implementation characteristics (e.g., whether the application executes on a server, a desktop, or other devices).</td><td>ImageVault Ui ImageVault ImageVault Plugin ImageVault EPiServer 7 Add-on Any 3rd part application</td></tr>
+<tr><td>Authorization server</td><td>The server issuing access tokens to the client after successfully authenticating the resource owner and obtaining authorization.</td><td>ImageVault Core</td></tr>
+</tbody>
+</table>
+";
+            expected = expected.Replace("\r", "");
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
+        [Test]
+        public void MultiRowTable2() {
+            const string input = @"Parameter Name	| Description
+---------------	|-----------------------------------------------------------------------------------------------------------------------------
+response\_type	| Defines the type of grant to be requested. Must be set to ""code"".
+---------------	|-----------------------------------------------------------------------------------------------------------------------------
+client\_id      | The id of the client application that requests access to ImageVault ([See OAuth Clients](oauth-clients.html))
+---------------	|-----------------------------------------------------------------------------------------------------------------------------
+redirect\_uri   | \[Optional] The uri where the response should be redirected. If omitted, the clients registered redirect\_uri will be used.
+---------------	|-----------------------------------------------------------------------------------------------------------------------------
+state           | RECOMMENDED.  An opaque value used by the client to maintain state between the request and callback.  The authorization
+                | server includes this value when redirecting the user-agent back to the client.  The parameter SHOULD be used for preventing
+                | cross-site request forgery as described in [Section 10.12](https://tools.ietf.org/html/rfc6749#section-10.12).
+---------------	|-----------------------------------------------------------------------------------------------------------------------------
+";
+            string expected = @"<table>
+<thead>
+<tr><th>Parameter Name</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>response_type</td><td>Defines the type of grant to be requested. Must be set to ""code"".</td></tr>
+<tr><td>client_id</td><td>The id of the client application that requests access to ImageVault (<a href=""oauth-clients.html"">See OAuth Clients</a>)</td></tr>
+<tr><td>redirect_uri</td><td>[Optional] The uri where the response should be redirected. If omitted, the clients registered redirect_uri will be used.</td></tr>
+<tr><td>state</td><td>RECOMMENDED.  An opaque value used by the client to maintain state between the request and callback.  The authorization server includes this value when redirecting the user-agent back to the client.  The parameter SHOULD be used for preventing cross-site request forgery as described in <a href=""https://tools.ietf.org/html/rfc6749#section-10.12"">Section 10.12</a>.</td></tr>
+</tbody>
+</table>
+";
+            expected = expected.Replace("\r", "");
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
+	}
 }

@@ -8,7 +8,7 @@ using MarkdownSharp;
 using NUnit.Framework;
 
 
-namespace MarkdownSharpTests 
+namespace MarkdownSharp.Tests 
 {
     [TestFixture]
     public class MDTestTests : BaseTest
@@ -16,7 +16,7 @@ namespace MarkdownSharpTests
         const string folder = "testfiles.mdtest_1._1";
 
 
-        private static IEnumerable<TestCaseData> GetTests()
+        public static IEnumerable<TestCaseData> GetTests()
         {
             Markdown m = new Markdown();
             Assembly assembly = Assembly.GetAssembly(typeof(BaseTest));
@@ -48,7 +48,7 @@ namespace MarkdownSharpTests
         }
 
 
-        [Test, TestCaseSource("GetTests")]
+        [TestCaseSource("GetTests")]
         public void Test(string actualName, string expectedName, string actual, string expected)
         {
             Assert.That(actual,

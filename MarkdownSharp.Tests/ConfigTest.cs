@@ -2,7 +2,7 @@ using System.Configuration;
 using MarkdownSharp;
 using NUnit.Framework;
 
-namespace MarkdownSharpTests
+namespace MarkdownSharp.Tests
 {
     [TestFixture]
     public class ConfigTest
@@ -14,6 +14,7 @@ namespace MarkdownSharpTests
             settings.Set("Markdown.AutoHyperlink", "true");
             settings.Set("Markdown.AutoNewlines", "true");
             settings.Set("Markdown.EmptyElementSuffix", ">");
+            settings.Set("Markdown.EncodeProblemUrlCharacters", "true");
             settings.Set("Markdown.LinkEmails", "false");
             settings.Set("Markdown.StrictBoldItalic", "true");
             
@@ -21,6 +22,7 @@ namespace MarkdownSharpTests
             Assert.AreEqual(true, markdown.AutoHyperlink);
             Assert.AreEqual(true, markdown.AutoNewLines);
             Assert.AreEqual(">", markdown.EmptyElementSuffix);
+            Assert.AreEqual(true, markdown.EncodeProblemUrlCharacters);
             Assert.AreEqual(false, markdown.LinkEmails);
             Assert.AreEqual(true, markdown.StrictBoldItalic);
         }
@@ -33,6 +35,7 @@ namespace MarkdownSharpTests
                 Assert.AreEqual(false, markdown.AutoHyperlink);
                 Assert.AreEqual(false, markdown.AutoNewLines);
                 Assert.AreEqual(" />", markdown.EmptyElementSuffix);
+                Assert.AreEqual(false, markdown.EncodeProblemUrlCharacters);
                 Assert.AreEqual(true, markdown.LinkEmails);
                 Assert.AreEqual(false, markdown.StrictBoldItalic);
             }
@@ -66,6 +69,16 @@ namespace MarkdownSharpTests
             Assert.AreEqual("<hr />\n", markdown.Transform("* * *"));
             markdown.EmptyElementSuffix = ">";
             Assert.AreEqual("<hr>\n", markdown.Transform("* * *"));
+        }
+
+        [Test]
+        public void TestEncodeProblemUrlCharacters()
+        {
+            var markdown = new Markdown();
+            Assert.IsFalse(markdown.EncodeProblemUrlCharacters);
+            Assert.AreEqual("<p><a href=\"/'*_[]()/\">Foo</a></p>\n", markdown.Transform("[Foo](/'*_[]()/)"));
+            markdown.EncodeProblemUrlCharacters = true;
+            Assert.AreEqual("<p><a href=\"/%27%2a%5f%5b%5d%28%29/\">Foo</a></p>\n", markdown.Transform("[Foo](/'*_[]()/)"));
         }
 
         [Test]

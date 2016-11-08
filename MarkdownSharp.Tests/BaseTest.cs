@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using NUnit.Framework;
 using System.Diagnostics;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.IO;
 
-using NUnit.Framework;
-
-namespace MarkdownSharpTests
+namespace MarkdownSharp.Tests
 {
     public class BaseTest
     {
