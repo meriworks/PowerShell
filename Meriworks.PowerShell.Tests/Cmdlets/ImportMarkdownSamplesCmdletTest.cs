@@ -332,7 +332,12 @@ Some other data", new[] { new Sample("CODE", "name", ""), new Sample("CODE", "na
         public void ConvertToTypeTest(string type, string content, string expected) {
 			_mocks.ReplayAll();
 			var actual = _cmdlet.ConvertToType(type, content);
-			Assert.AreEqual(expected, actual, "Mismatch in actual");
+            if (expected != null)
+                expected = expected.Replace(@"\r\n", @"\n");
+            if (actual != null)
+                actual = actual.Replace(@"\r\n", @"\n");
+
+            Assert.AreEqual(expected, actual, "Mismatch in actual");
 			_mocks.VerifyAll();
 		}
 		#endregion
@@ -369,11 +374,16 @@ Line after 3 spaces
  Line after 1 tab
  	Line after 2 tabs
 ", Description = "Mixed tabs and spaces. Keep tabs if possible, change vs 4 spaces if needed.")]
-		public void FixIndentationTest(string data, object expected) {
+		public void FixIndentationTest(string data, string expected) {
 
 			_mocks.ReplayAll();
 			var actual = _cmdlet.FixIndentation(data);
-			Assert.AreEqual(expected, actual, "Mismatch in actual");
+            if (expected != null)
+                expected = expected.Replace(@"\r\n", @"\n");
+            if (actual != null)
+                actual = actual.Replace(@"\r\n", @"\n");
+
+            Assert.AreEqual(expected, actual, "Mismatch in actual");
 
 			_mocks.VerifyAll();
 		}

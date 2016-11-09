@@ -151,7 +151,11 @@ QueryMetadataDefinition.html Query Metadata definitions", @"<ul>
 
 			_mocks.ReplayAll();
 			var actual = task.CreateDocList(fileInfo);
-			Assert.AreEqual(expected, actual, "Mismatch in actual");
+            if(expected != null)
+		    expected = expected.Replace(@"\r\n", @"\n");
+            if (actual != null)
+                actual = actual.Replace(@"\r\n", @"\n");
+            Assert.AreEqual(expected, actual, "Mismatch in actual");
 
 			_mocks.VerifyAll();
 		}
