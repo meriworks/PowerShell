@@ -38,6 +38,8 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 
 <a name="changelog"></a>
 ## Changelog
+### v6.0.0 - 2016-11-09
+* Invoke-Robocopy replaces Run-Robocopy [#1](https://github.com/meriworks/PowerShell/issues/1)
 
 ### v5.0.0 - 2016-11-08
 * Initial public release
@@ -46,19 +48,19 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 ## Documentation
 The following commands are defined in this module.
 
-* [Run-RoboCopy](#run-robocopy)
+* [Invoke-Robocopy](#invoke-robocopy)
 * [Import-MarkdownSamples](#import-markdownsamples)
 * [Convert-MarkdownToHtml](#convert-markdowntohtml)
 
-<a name="run-robocopy"></a>
-### Run-RoboCopy
-When running a robocopy command from a powershell script it can cause havoc when it comes to the exit code set by the robocopy command. Normally an exit code of 0 indicates that a command went well and 1 indicates that an error occurred. Robocopy has redefined this list <http://ss64.com/nt/robocopy-exit.html> and to avoid a successful robocopy command indicating the PowerShell exit code incorrect as a failure, we can use the `run-robocopy` powershell command instead.
+<a name="invoke-robocopy"></a>
+### Invoke-Robocopy
+When running a robocopy command from a powershell script it can cause havoc when it comes to the exit code set by the robocopy command. Normally an exit code of 0 indicates that a command went well and 1 indicates that an error occurred. Robocopy has redefined this list <http://ss64.com/nt/robocopy-exit.html> and to avoid a successful robocopy command indicating the PowerShell exit code incorrect as a failure, we can use the `invoke-robocopy` powershell command instead.
 
 It has the same parameters as the [Robocopy](http://ss64.com/nt/robocopy.html) command and only handles the exit code. If any error occur, it will throw an error.
 
 #### Example
 
-	run-robocopy "bin\$configuration\help" "bin\$configuration\html_old\reference" /s
+	invoke-robocopy "bin\$configuration\help" "bin\$configuration\html_old\reference" /s
 
 <a name="import-markdownsamples"></a>
 ### Import-MarkdownSamples
