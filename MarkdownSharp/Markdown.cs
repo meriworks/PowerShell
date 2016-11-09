@@ -1664,7 +1664,7 @@ namespace MarkdownSharp
             }
 
             // Hyperlinks: <http://foo.com>
-            text = Regex.Replace(text, "<((https?|ftp):[^'\">\\s]+)>", new MatchEvaluator(HyperlinkEvaluator));
+            text = Regex.Replace(text, "<((https?|ftp):[^'\">\\s]+)>", HyperlinkEvaluator);
 
             if (_linkEmails)
             {
@@ -1678,7 +1678,7 @@ namespace MarkdownSharp
                         [-a-z0-9]+(\.[-a-z0-9]+)*\.[a-z]+
                       )
                       >";
-                text = Regex.Replace(text, pattern, new MatchEvaluator(EmailEvaluator), RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
+                text = Regex.Replace(text, pattern, EmailEvaluator, RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
             }
 
             return text;

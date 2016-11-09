@@ -86,7 +86,22 @@ namespace MarkdownSharp.Tests
         {
             var markdown = new Markdown();
             Assert.IsTrue(markdown.LinkEmails);
-            Assert.AreEqual("<p><a href=\"&#", markdown.Transform("<aa@bb.com>").Substring(0,14));
+            //when transforming an email, the email address link is encoded a bit randomly to protect the email address
+            //from simple email scanners
+            var transform = markdown.Transform("<aa@bb.com>");
+            var possibleTranslationsForM = new[] {"m", "&#x6d;", "&#109;"};
+            var acceptableTransformationFound = false;
+            for (var i = 0; !acceptableTransformationFound && i < possibleTranslationsForM.Length; i++)
+            {
+                var expected = "<p><a href=\"" + possibleTranslationsForM[i];
+                var actual = transform.Substring(0, expected.Length);
+                if (string.Equals(actual, expected))
+                {
+                    acceptableTransformationFound = true;
+                }
+            }
+            Assert.IsTrue(acceptableTransformationFound,"Transformation of email was not successful. Actual:"+transform);
+
             markdown.LinkEmails = false;
             Assert.AreEqual("<p><aa@bb.com></p>\n", markdown.Transform("<aa@bb.com>"));
         }
