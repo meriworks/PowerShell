@@ -332,12 +332,7 @@ Some other data", new[] { new Sample("CODE", "name", ""), new Sample("CODE", "na
         public void ConvertToTypeTest(string type, string content, string expected) {
 			_mocks.ReplayAll();
 			var actual = _cmdlet.ConvertToType(type, content);
-            if (expected != null)
-                expected = expected.Replace(@"\r\n", @"\n");
-            if (actual != null)
-                actual = actual.Replace(@"\r\n", @"\n");
-
-            Assert.AreEqual(expected, actual, "Mismatch in actual");
+            Assert.AreEqual(StringUtil.FixLineEndings(expected), StringUtil.FixLineEndings(actual), "Mismatch in actual");
 			_mocks.VerifyAll();
 		}
 		#endregion
@@ -378,12 +373,7 @@ Line after 3 spaces
 
 			_mocks.ReplayAll();
 			var actual = _cmdlet.FixIndentation(data);
-            if (expected != null)
-                expected = expected.Replace(@"\r\n", @"\n");
-            if (actual != null)
-                actual = actual.Replace(@"\r\n", @"\n");
-
-            Assert.AreEqual(expected, actual, "Mismatch in actual");
+            Assert.AreEqual(StringUtil.FixLineEndings(expected), StringUtil.FixLineEndings(actual), "Mismatch in actual");
 
 			_mocks.VerifyAll();
 		}
