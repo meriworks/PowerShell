@@ -24,6 +24,8 @@ if(-not(Test-Path $nugetExe)){
     Die("Cannot find nuget.exe $nugetExe, either set the nuget env variable or add a .nuget\nuget.exe file.")
 }
 
+#Get-ChildItem . -r packages.config|%{ nuget restore -solutionDir . $_.FullName}
+. $nugetExe restore PowerShell.sln
 
 & "$(Get-Content env:windir)\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" "PowerShell.sln" /p:Configuration=$config 
 
