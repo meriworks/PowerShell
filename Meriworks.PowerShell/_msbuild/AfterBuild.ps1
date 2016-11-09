@@ -4,3 +4,4 @@
 
 Write-Host "Signing scripts"
 SignScriptsInFolder (join-path $projectDir "nuspec/tools")
+SignScript (join-path $projectDir "nuspec/tools/Meriworks.PowerShell.psd1")
