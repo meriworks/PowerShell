@@ -44,8 +44,24 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 
 <a name="documentation"></a>
 ## Documentation
+The following commands are defined in this module.
 
-## Import-MarkdownSamples
+* [Run-RoboCopy](#run-robocopy)
+* [Import-MarkdownSamples](#import-markdownsamples)
+* [Convert-MarkdownToHtml](#convert-markdowntohtml)
+
+<a name="run-robocopy"></a>
+### Run-RoboCopy
+When running a robocopy command from a powershell script it can cause havoc when it comes to the exit code set by the robocopy command. Normally an exit code of 0 indicates that a command went well and 1 indicates that an error occurred. Robocopy has redefined this list <http://ss64.com/nt/robocopy-exit.html> and to avoid a successful robocopy command indicating the PowerShell exit code incorrect as a failure, we can use the `run-robocopy` powershell command instead.
+
+It has the same parameters as the [Robocopy](http://ss64.com/nt/robocopy.html) command and only handles the exit code. If any error occur, it will throw an error.
+
+#### Example
+
+	run-robocopy "bin\$configuration\help" "bin\$configuration\html_old\reference" /s
+
+<a name="import-markdownsamples"></a>
+### Import-MarkdownSamples
 This cmdlet will expand code samples and api references in the supplied markdown file. The cmdlet takes the following parameters
 
 * Filename - the path to the markdown file to expand samples in
@@ -54,7 +70,8 @@ This cmdlet will expand code samples and api references in the supplied markdown
 
 		Import-MarkdownSamples -Filename $file.FullName -RootPath $targetDir -HtmlHelpPath "reference/html"
 
-## Convert-MarkdownToHtml
+<a name="convert-markdowntohtml"></a>
+### Convert-MarkdownToHtml
 This cmdlet will convert a markdown file to Html. The cmdlet takes the following parameters.
 
 * InputFile - the path to the markdown file to convert

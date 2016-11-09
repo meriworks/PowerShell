@@ -2,5 +2,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/MsBuild/2003" ToolsVersion="4.0">
     <PropertyGroup>
         <BuildEventsRunnerExtensions>$(BuildEventsRunnerExtensions),$(MSBuildThisFileDirectory)..\tools\Meriworks.PowerShell.psd1</BuildEventsRunnerExtensions>
+        <BuildEventsRunnerExtensions>$(BuildEventsRunnerExtensions),$(MSBuildThisFileDirectory)..\tools\UtilityFunctions.psm1</BuildEventsRunnerExtensions>
     </PropertyGroup>
 </Project>

@@ -55,7 +55,7 @@
     <None Include="Meriworks.PowerShell.nuspec" />
     <None Include="nuspec\build\Meriworks.PowerShell.targets" />
     <None Include="nuspec\tools\Meriworks.PowerShell.psd1" />
-    <None Include="nuspec\tools\install.ps1" />
+    <None Include="nuspec\tools\UtilityFunctions.psm1" />
     <None Include="packages.config" />
     <None Include="_msbuild\AfterBuild.ps1" />
     <None Include="_msbuild\BeforeBuild.ps1" />
