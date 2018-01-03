@@ -1,7 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/MsBuild/2003" ToolsVersion="4.0">
     <PropertyGroup>
+        <XmlTransformDllPath Condition="'$(XmlTransformDllPath)' == '' Or !Exists($(XmlTransformDllPath))">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Web\Microsoft.Web.XmlTransform.dll</XmlTransformDllPath>
         <BuildEventsRunnerExtensions>$(BuildEventsRunnerExtensions),$(MSBuildThisFileDirectory)..\tools\Meriworks.PowerShell.psd1</BuildEventsRunnerExtensions>
         <BuildEventsRunnerExtensions>$(BuildEventsRunnerExtensions),$(MSBuildThisFileDirectory)..\tools\UtilityFunctions.psm1</BuildEventsRunnerExtensions>
+        <BuildEventsRunnerVariables>$(BuildEventsRunnerVariables),XmlTransformDllPath=$(XmlTransformDllPath)</BuildEventsRunnerVariables>
+
     </PropertyGroup>
 </Project>

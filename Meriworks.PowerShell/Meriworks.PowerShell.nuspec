@@ -13,7 +13,7 @@
         </releaseNotes>
         <developmentDependency>true</developmentDependency>
         <dependencies>
-            <dependency id="Meriworks.PowerShell.BuildEvents" version="5.1"/>
+            <dependency id="Meriworks.PowerShell.BuildEvents" version="5.2"/>
         </dependencies>
     </metadata>
     <files>

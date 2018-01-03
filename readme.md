@@ -38,8 +38,11 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 
 <a name="changelog"></a>
 ## Changelog
+### v6.1.0 - 2018-01-03
+* [Invoke-XmlTransform](#invoke-xmltransform) function added
+
 ### v6.0.0 - 2016-11-09
-* Invoke-Robocopy replaces Run-Robocopy [#1](https://github.com/meriworks/PowerShell/issues/1)
+* [Invoke-Robocopy](#invoke-robocopy) replaces Run-Robocopy [#1](https://github.com/meriworks/PowerShell/issues/1)
 
 ### v5.0.0 - 2016-11-08
 * Initial public release
@@ -49,6 +52,7 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 The following commands are defined in this module.
 
 * [Invoke-Robocopy](#invoke-robocopy)
+* [Invoke-XmlTransform](#invoke-xmltransform)
 * [Import-MarkdownSamples](#import-markdownsamples)
 * [Convert-MarkdownToHtml](#convert-markdowntohtml)
 
@@ -61,6 +65,24 @@ It has the same parameters as the [Robocopy](http://ss64.com/nt/robocopy.html) c
 #### Example
 
 	invoke-robocopy "bin\$configuration\help" "bin\$configuration\html_old\reference" /s
+
+<a name="invoke-xmltransform"></a>
+### Invoke-XmlTransform
+Xml transformation is used to apply an xdt template on to an xml file.
+
+The function takes the following parameters
+
+* xml - path to the Xml document that should be merged
+* xdt - path to the Xtd document contaning the data to be merged
+* replaceVariables - (optional) If true, replaces some variables in the xdt file before merge with their respective values
+	Currently supports:
+	* $(ProjectDir)
+    * $(SolutionDir)
+    * $(ConfigBuilderHost)
+
+#### Example
+
+	invoke-XmlTransform "$projectDir\web.config" "$projectDir\myweb.config.xdt"
 
 <a name="import-markdownsamples"></a>
 ### Import-MarkdownSamples
