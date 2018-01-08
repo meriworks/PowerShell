@@ -42,12 +42,166 @@ function Invoke-XmlTransform([string] $xml, [string] $xdt,[bool] $replaceVariabl
     }
     $xmldoc.Save($xml);
 }
+# Combines the supplied baseVersion with a ver format that controls the resulting format.
+# baseVersion is a version string on the format major.minor.patch.build,
+# ver is a version pattern string
+# BNF
+# <baseVersion>		::=	<number>.<number>.<number>.<number>
+# <ver>				::=	<patternNumber>.<patternNumber>.<patternNumber>[.<patternNumber>]
+# <number>			::=	1*<digit>
+# <patternNumber>	::=	<number>|<wildcard>
+# <digit>			::=	"0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+# <wildcard>		::=	"*"
+function Format-Version([string] $baseVersion, [string] $ver) {
+	if(!($baseVersion -match "^(?<v1>\d+)\.(?<v2>\d+)\.(?<v3>\d+)\.(?<v4>\d+)$")){
+		throw "Incorrect base version format '$baseVersion'. Expected \d+.\d+.\d+.\d+"
+	}
+	$bv1 = $Matches.v1
+	$bv2 = $Matches.v2
+	$bv3 = $Matches.v3
+	$bv4 = $Matches.v4
+
+	if(!($ver -match "^(?<v1>\d+|\*)\.(?<v2>\d+|\*)\.(?<v3>\d+|\*)(:?\.(?<v4>\d+|\*))?$")){
+		throw "Incorrect version format '$ver'. Expected x.x.x.x where x is one or multple numeric characters or a wildcard '*' character"
+	}
+	$v1 = $Matches.v1
+	$v2 = $Matches.v2
+	$v3 = $Matches.v3
+	$v4 = $Matches.v4
+	if($v1 -eq '*') {
+		$v1 = $bv1
+	}
+	if($v2 -eq '*') {
+		$v2 = $bv2
+	}
+	if($v3 -eq '*') {
+		$v3 = $bv3
+	}
+	if($v4 -eq '*') {
+		$v4 = $bv4
+	}
+	$ver = "$v1.$v2.$v3"
+	if($v4.length -gt 0) {
+		$ver="$ver.$v4"
+	}
+	return $ver
+}
+# Looks in the supplied directory for a buildVersion.txt file. If none is found, it continues to search upwards in 
+# the supplied path.
+# The buildversion.txt file is expected to contain a version string on the format major.minor.patch.build
+function Get-BuildVersion([string] $dir) {
+	while(Test-Path $dir) {
+		$verPath = Join-Path $dir "buildVersion.txt"
+		if(Test-Path $verPath) {
+			Write-Host "Reading $verPath"
+			return (Get-Content $verPath)
+		}
+		$dir = Split-Path $dir
+		if($dir -eq "") {
+			break;
+		}
+	}
+	throw "Canot find buildversion.txt file"
+}
+# Gets the version object for the supplied directory.
+# First calls Get-BuildVersion to get the current version for the build.
+# Then looks for the nearest version.json file that expects a json object with three properties
+# assemblyVersion, fileVersion, informationalVersion.
+# Each of these properties are patterns on how to format the specific version string. 
+function Get-VersionData([string] $dir){
+	$buildVersion = Get-BuildVersion $dir
+	while(Test-Path $dir) {
+		$verPath = Join-Path $dir "version.json"
+		if(Test-Path $verPath) {
+			Write-Host "Reading $verPath"
+			$v = Get-Content $verPath|Out-String|ConvertFrom-Json
+			$v.assemblyVersion = Format-Version $buildVersion $v.assemblyVersion
+			$v.fileVersion = Format-Version $buildVersion $v.fileVersion
+			$v.informationalVersion = Format-Version $buildVersion $v.informationalVersion
+			return $v
+		}
+		$dir = Split-Path $dir
+		if($dir -eq "") {
+			break;
+		}
+	}
+	return $null
+}
+# Gets the version object for the project. See Get-VersionData for more information
+function Get-ProjectVersion(){
+	$version = Get-VersionData $projectDir
+	if($version -eq $null) {
+		throw "No version.json file was found in the $projectDir path or any of it's parents"
+	} 
+	return $version
+}
+# Gets the Semantic version for the project (major.minor.patch). 
+# Based on the assemblyVersion from the Get-ProjectVersion
+function Get-ProjectSemanticVersion(){
+	$version=Get-ProjectVersion
+	return ($version.assemblyVersion) -replace "(\d+\.\d+\.\d+)\.\d+",'$1'
+}
+# Sets the versions on the AssemblyInfo.cs file according to the supplied $version object.
+# Looks in the Properties folder of the project for the AssemblyInfo.cs file
+#
+# $version - object with three properties:
+#	assemblyInfoVersion - string to set as assemblyVersion. ie. 1.1.4.0
+#	fileVersion - string to set as fileVersion. ie. 1.1.4.252
+#	informationalVersion - string to set as informationalVersion. ie 1.1.4-beta
+# If no version is suppled, the Get-ProjectVersion method is invoked
+function Set-AssemblyInfoVersion($version){
+	if($version -eq $null){
+		$version = Get-ProjectVersion
+	}
+	$aiPath = Join-Path $projectDir "Properties/AssemblyInfo.cs"
+	if(!(Test-Path $aiPath)){
+		Write-Host "AssemblyInfo file is missing '$aiPath'"
+		return
+	}
+
+	$ai = Get-Content $aiPath|Out-String
+	$ai = $ai -replace "AssemblyVersion\([^)]+\)","AssemblyVersion(""$($version.assemblyVersion)"")"
+	$ai = $ai -replace "AssemblyFileVersion\([^)]+\)","AssemblyFileVersion(""$($version.fileVersion)"")"
+	$ai = $ai -replace "AssemblyInformationalVersion\([^)]+\)","AssemblyInformationalVersion(""$($version.informationalVersion)"")"
+	$ai.TrimEnd("`n`r")|Out-File $aiPath -Encoding utf8
+}
+
+#Sets the version element of the nuspec file to the supplied version string
+# $path - Path to the nuspec file to modify
+# $nuspecversion - the version string to set. If omitted, the version is calculated using the Get-ProjectSemanticVersion
+function Set-NuspecVersion([string] $path, [string] $nuspecversion){
+	if($nuspecversion -eq $null -or $nuspecversion.Length -eq 0) {
+		$nuspecversion = Get-ProjectSemanticVersion
+	}
+	Write-Host "SetNuspecVersion '$path' '$nuspecversion'"
+	if(!(Test-Path $path)){
+		throw "File is missing $path"
+	}
+
+	$x =New-Object System.Xml.XmlDocument
+	$x.Load($path)
+	$x.PreserveWhitespace=$true
+	$x =[Xml](Get-Content $path)
+	$x.Package.metadata.version=$nuspecversion
+
+	$settings = New-Object System.Xml.XmlWriterSettings
+	$settings.Indent = $true
+	#$settings.NewLineChars ="`r`n"
+	$settings.Encoding = New-Object System.Text.UTF8Encoding( $false )
+	
+	$w = [System.Xml.XmlWriter]::Create($path,$settings)
+	try{
+		$x.Save( $w )
+	} finally{
+		$w.Dispose()
+	}
+}
 
 # SIG # Begin signature block
 # MIIbPQYJKoZIhvcNAQcCoIIbLjCCGyoCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
 # gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
-# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUEy3nyYOTxIfqOQNfaEBJ7qBb
-# LKGgghaNMIID7jCCA1egAwIBAgIQfpPr+3zGTlnqS5p31Ab8OzANBgkqhkiG9w0B
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUknsDdptHe02dESy/Bmw/yfxC
+# NkegghaNMIID7jCCA1egAwIBAgIQfpPr+3zGTlnqS5p31Ab8OzANBgkqhkiG9w0B
 # AQUFADCBizELMAkGA1UEBhMCWkExFTATBgNVBAgTDFdlc3Rlcm4gQ2FwZTEUMBIG
 # A1UEBxMLRHVyYmFudmlsbGUxDzANBgNVBAoTBlRoYXd0ZTEdMBsGA1UECxMUVGhh
 # d3RlIENlcnRpZmljYXRpb24xHzAdBgNVBAMTFlRoYXd0ZSBUaW1lc3RhbXBpbmcg
@@ -172,22 +326,22 @@ function Invoke-XmlTransform([string] $xml, [string] $xdt,[bool] $replaceVariabl
 # Q29kZVNpZ25pbmcgQ0EgLSBTSEEyNTYgLSBHMwIMW2qjK6+71wtbCxA7MAkGBSsO
 # AwIaBQCgeDAYBgorBgEEAYI3AgEMMQowCKACgAChAoAAMBkGCSqGSIb3DQEJAzEM
 # BgorBgEEAYI3AgEEMBwGCisGAQQBgjcCAQsxDjAMBgorBgEEAYI3AgEVMCMGCSqG
-# SIb3DQEJBDEWBBSlN/DwQpz9T13uObzlqELAZkHMMTANBgkqhkiG9w0BAQEFAASC
-# AQBenM0hejomwf9kyDzb7JHbPD/iYIIXjCujT/lPsEYhSQ6Zk+fIqogSt5eJq8pw
-# HUQ0ldrpbGPXZxqTpqLlXt50PxqF/cJBusXrvbFIJMhVOfoMrepGIGKxZggqKJ6L
-# TSq0nNaRdZGkC1qjXNFJHclbUC/yafz1HPIrqwDwmPGz2ZafrjUY+MaMwrbIRJb2
-# mSF4PbYuU3vke9Ox8OBJWscim/JPrNhoNu+uNVNi3dA4FtrO5AqSrhu4/zpu86sf
-# ReYCkiLnM6/WQXXYbWkfJa0O3P/AjJA6KrP8H+FpBSjw32nabvvedhV5LNb/qqlR
-# l64EMmpEafQezsgaVTN/vmzSoYICCzCCAgcGCSqGSIb3DQEJBjGCAfgwggH0AgEB
+# SIb3DQEJBDEWBBQblsa+gLiJua1wQbRsKm3KthTbFzANBgkqhkiG9w0BAQEFAASC
+# AQAUChO2X4Yjxk2xysrLwSR6d8iactPIrtl+mpYQl+OHQ/k8nvrPMHaSgTkhNk7+
+# C2hsIbvkQA6MVkayHhIHZPB8AfiNHRoUYqUbdSaLlsN1ayZfx+71+SHQ/3SrOT4R
+# 0uia1hJwActaBOufhod+SXl+YHBkkvPOuLw6diBNSDUvXR/40/PIblkC8JA049r+
+# JpFN9l8yis2S4IMUhNInhh5vm4v5HjWu9UbnIMXFfjQNF2lY3uwnrT8RInQwVE+n
+# 3m074VDZqp2gbF+JuX77PfsObKnoE5JBjlvi/XoS6TlM7hBh3bbK66jk/AXZLF2U
+# dw8sjiDSjfwGxKfhowfX9gJEoYICCzCCAgcGCSqGSIb3DQEJBjGCAfgwggH0AgEB
 # MHIwXjELMAkGA1UEBhMCVVMxHTAbBgNVBAoTFFN5bWFudGVjIENvcnBvcmF0aW9u
 # MTAwLgYDVQQDEydTeW1hbnRlYyBUaW1lIFN0YW1waW5nIFNlcnZpY2VzIENBIC0g
 # RzICEA7P9DjI/r81bgTYapgbGlAwCQYFKw4DAhoFAKBdMBgGCSqGSIb3DQEJAzEL
-# BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE4MDEwMzIxMjUzM1owIwYJKoZI
-# hvcNAQkEMRYEFEAydwKxVwqt3Tw0uf+VMM9/MvNeMA0GCSqGSIb3DQEBAQUABIIB
-# AH7gFi81zi7/gvXZ4bKu3msWuRcFhOmbYJf577MmzOdtsFCbU6O7u1uOSI1Btza7
-# lUh0+BANwfyV0eSpLm12OgS44BMDNtBTwMlsqxt+LUvK9H88Uv4wMj1DG0iU3rNf
-# FqOaO6LWYoq1dHa7OlxiLfVzvXTctYENWBwzw27xNCveREE5fRqUp8J89VnA15BK
-# mVBueqUQVx8ICYwK4EoJ1NvDXQ4TlhDkEPtm2sezxTrHButKKRTtEgANHTak2NSp
-# t7kJCpyYeqoHrITRpMyK3/7Cf5vuJqfBoStP8p5iYfBI1lVUgwfdduDQRy3bNQbp
-# 43CQI1FYUa7JJqOCY21mfvU=
+# BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE4MDEwODEyNDk1NlowIwYJKoZI
+# hvcNAQkEMRYEFIXwvzHSbYwy4RXGXcIEs5hvw9Y9MA0GCSqGSIb3DQEBAQUABIIB
+# AD5QLur3kLHESRI9RkvvJnBv7r8Ltc9Yhe6A96iw5LR0PugMqMxRtVKoW4Ygd44O
+# i3Wp/yNZiTGV/Ee7nhBNpeTxPcVuXGuGCSAuzfEHRrbh84bXYTTh4hH32x9ZCx38
+# YhewPXaZEjTPm40XCqm4fCI9w5TSEgMRaf4gl2nvRgKbegfa/YkZat/NUmebn2fs
+# tiTMtI/rDILrtZulusO21gMwwdVCQ6zvArJtXtdtFvBN3VKd2BrqYVyQGTCYy2U+
+# KoLhAxZGom+kT/M0j/atoxxYOb24zywIJ6JZo7TfeQsdtko0sOLB8MKA6KSKDMWJ
+# Gy1C19F7SynaKFi1woKSIog=
 # SIG # End signature block
