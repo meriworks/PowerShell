@@ -1471,7 +1471,8 @@ namespace MarkdownSharp
 				return true;
 			return false;
 		}
-        public static Regex NoWrapRule = new Regex(@"^\s*\++\s*$");
+        //nowrap on +++++ or ======
+        public static Regex NoWrapRule = new Regex(@"^\s*[\+=]+\s*$");
 
         private List<string> CheckStyleRow(IEnumerable<string> cells) {
             var list = new List<string>();

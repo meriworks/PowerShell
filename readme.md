@@ -188,6 +188,9 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 
 <a name="changelog"></a>
 ## Changelog
+### v6.2.1 - 2018-01-12
+Markdown tables now adds nowrap to a column when a header separator contains of = instead of -
+
 ### v6.2.0 - 2018-01-08
 A set of commands related to maintaining version numbers added
 
