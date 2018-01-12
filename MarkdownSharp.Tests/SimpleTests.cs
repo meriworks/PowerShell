@@ -238,7 +238,22 @@ namespace MarkdownSharp.Tests
             Assert.AreEqual(expected, actual);
         }
         [Test]
-        public void SimpleTableWithNoWrap2() {
+        public void SimpleTableWithNoWrap2()
+        {
+            const string input = @"
+|First Header  | Second Header|
+| ============ | -------------|
+|Content Cell  | Content Cell|
+|Content Cell  | Content Cell|
+";
+            const string expected = "<table>\n<thead>\n<tr><th style=\"white-space:nowrap;\">First Header</th><th>Second Header</th></tr>\n</thead>\n" +
+                                    "<tbody>\n<tr><td style=\"white-space:nowrap;\">Content Cell</td><td>Content Cell</td></tr>\n<tr><td style=\"white-space:nowrap;\">Content Cell</td><td>Content Cell</td></tr>\n</tbody>\n</table>\n";
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
+        [Test]
+        public void SimpleTableWithNoWrap3() {
             const string input = @"
 |First Header  | Second Header|
 | ++++++++++++ | ++++++++++++ |

@@ -1284,10 +1284,10 @@ namespace MarkdownSharp
                    
 (?<divider>        #table divider
   ^                #start of line
-  [\|\-\+\:\.]     #start with pipe separator, aligment(:) and separators (-.+)
-  [\s\-\+\:\.]*    #continue separators (spaces are ok)
+  [\|\-\+=\:\.]     #start with pipe separator, aligment(:) and separators (-.+)
+  [\s\-\+=\:\.]*    #continue separators (spaces are ok)
   \|               #until first column separator
-  [ \-\+\|\:\.]*   #then continue with divider valid characters 
+  [ \-\+=\|\:\.]*   #then continue with divider valid characters 
 )\r?\n             #until end of line            
                    
 (?<rows>           #Rows
