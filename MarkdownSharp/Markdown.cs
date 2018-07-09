@@ -298,7 +298,7 @@ namespace MarkdownSharp
 
         private static readonly Dictionary<string, string> _escapeTable;
         private static readonly Dictionary<string, string> _invertedEscapeTable;
-        private static readonly Dictionary<string, string> _backslashEscapeTable;        
+        private static readonly Dictionary<string, string> _backslashEscapeTable;
 
         private readonly Dictionary<string, string> _urls = new Dictionary<string, string>();
         private readonly Dictionary<string, string> _titles = new Dictionary<string, string>();
@@ -358,7 +358,7 @@ namespace MarkdownSharp
             Setup();
 
             text = Normalize(text);
-           
+
             text = HashHTMLBlocks(text);
             text = StripLinkDefinitions(text);
             text = RunBlockGamut(text);
@@ -377,9 +377,10 @@ namespace MarkdownSharp
         {
             text = DoHeaders(text);
             text = DoTables(text);
-			text = DoHorizontalRules(text);
+            text = DoHorizontalRules(text);
             text = DoLists(text);
             text = DoCodeBlocks(text);
+            text = DoCodeBlockWithBackticks(text);
             text = DoBlockQuotes(text);
             // We already ran HashHTMLBlocks() before, in Markdown(), but that
             // was to escape raw HTML in the original Markdown source. This time,
@@ -429,7 +430,7 @@ namespace MarkdownSharp
         {
             // split on two or more newlines
             string[] grafs = _newlinesMultiple.Split(_newlinesLeadingTrailing.Replace(text, ""));
-            
+
             for (int i = 0; i < grafs.Length; i++)
             {
                 if (grafs[i].StartsWith("\x1A"))
@@ -843,7 +844,7 @@ namespace MarkdownSharp
                 string url = _urls[linkID];
 
                 url = EncodeProblemUrlChars(url);
-                url = EscapeBoldItalic(url);                
+                url = EscapeBoldItalic(url);
                 result = "<a href=\"" + url + "\"";
 
                 if (_titles.ContainsKey(linkID))
@@ -874,7 +875,7 @@ namespace MarkdownSharp
                 string url = _urls[linkID];
 
                 url = EncodeProblemUrlChars(url);
-                url = EscapeBoldItalic(url);                
+                url = EscapeBoldItalic(url);
                 result = "<a href=\"" + url + "\"";
 
                 if (_titles.ContainsKey(linkID))
@@ -989,7 +990,7 @@ namespace MarkdownSharp
             {
                 string url = _urls[linkID];
                 url = EncodeProblemUrlChars(url);
-                url = EscapeBoldItalic(url);                
+                url = EscapeBoldItalic(url);
                 result = string.Format("<img src=\"{0}\" alt=\"{1}\"", url, altText);
 
                 if (_titles.ContainsKey(linkID))
@@ -1020,7 +1021,7 @@ namespace MarkdownSharp
 
             alt = alt.Replace("\"", "&quot;");
             title = title.Replace("\"", "&quot;");
-            
+
             if (url.StartsWith("<") && url.EndsWith(">"))
                 url = url.Substring(1, url.Length - 2);    // Remove <>'s surrounding URL, if present
             url = EncodeProblemUrlChars(url);
@@ -1250,7 +1251,7 @@ namespace MarkdownSharp
                     )+
                     )
                     ((?=^[ ]{{0,{0}}}\S)|\Z) # Lookahead for non-space at line-start, or end of doc",
-                    _tabWidth), RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+                _tabWidth), RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
         /// <summary>
         /// /// Turn Markdown 4-space indented code into HTML pre code blocks
@@ -1270,7 +1271,31 @@ namespace MarkdownSharp
 
             return string.Concat("\n\n<pre><code>", codeBlock, "\n</code></pre>\n\n");
         }
-		private static readonly Regex TableRules = new Regex(@"
+        private static readonly Regex CodeBlockBackticks = new Regex(@"
+            ```   # Three backtics start the block
+            (.*?) # $1 = the code block
+            ```   # Ends with three backtics"
+               , RegexOptions.Singleline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+
+        /// <summary>
+        /// /// Turn Markdown 4-space indented code into HTML pre code blocks
+        /// </summary>
+        private string DoCodeBlockWithBackticks(string text)
+        {
+            text = CodeBlockBackticks.Replace(text, CodeBlockWithBackticksEvaluator);
+            return text;
+        }
+
+        private string CodeBlockWithBackticksEvaluator(Match match)
+        {
+            string codeBlock = match.Groups[1].Value;
+
+            codeBlock = EncodeCode(codeBlock);
+            codeBlock = _newlinesLeadingTrailing.Replace(codeBlock, "");
+
+            return $"\n\n<pre><code class=\"code-block\">{codeBlock}</code></pre>\n\n";
+        }
+        private static readonly Regex TableRules = new Regex(@"
 (?<header>              #table header
   ^                #start of line
   (?:              #a table line starts with
@@ -1305,7 +1330,7 @@ namespace MarkdownSharp
 )
 ", RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline | RegexOptions.Compiled);
 
-		private static readonly Regex SplitTableCells = new Regex(@"
+        private static readonly Regex SplitTableCells = new Regex(@"
 (?<=             #separator is only valid if prefix is 
   ^				 #start of line
   |              #or
@@ -1313,128 +1338,148 @@ namespace MarkdownSharp
   (?:\\\\)*      #any trailing double backquotes are eaten (odd numbers escapes the pipe)
 )                #end of prefix
 \|               #pipe is the separator
-", RegexOptions.IgnorePatternWhitespace| RegexOptions.Compiled);
-		private static readonly Regex AlignmentRule=new Regex(@"^[:]?-+[:]?$",RegexOptions.Compiled);
-			private string DoTables(string text) {
-				return TableRules.Replace(text, TableEvaluator);
-			}
+", RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
+        private static readonly Regex AlignmentRule = new Regex(@"^[:]?-+[:]?$", RegexOptions.Compiled);
+        private string DoTables(string text)
+        {
+            return TableRules.Replace(text, TableEvaluator);
+        }
 
-		private string TableEvaluator(Match match) {
-			var headerString = match.Groups["header"].Value;
-			var dividerString = match.Groups["divider"].Value;
-			var rowsString = match.Groups["rows"].Value;
-			var lines = Regex.Split(rowsString, @"[\n\r]+").Where(l=>!string.IsNullOrEmpty(l)).ToList();
-			var headerCells = SplitTableCells.Split(headerString);
-			var dividerCells = SplitTableCells.Split(dividerString);
+        private string TableEvaluator(Match match)
+        {
+            var headerString = match.Groups["header"].Value;
+            var dividerString = match.Groups["divider"].Value;
+            var rowsString = match.Groups["rows"].Value;
+            var lines = Regex.Split(rowsString, @"[\n\r]+").Where(l => !string.IsNullOrEmpty(l)).ToList();
+            var headerCells = SplitTableCells.Split(headerString);
+            var dividerCells = SplitTableCells.Split(dividerString);
 
-			var headers = headerCells.Select(v => string.IsNullOrEmpty(v) ? null : v.Trim()).ToList();
-			var alignments = CheckAlignmentRow(dividerCells);
-		    var styles = CheckStyleRow(dividerCells);
-			var rows = new List<List<string>>();
-			
-			foreach (var line in lines) {
-				var cells = SplitTableCells.Split(line);
-				var row = cells.Select(v => string.IsNullOrEmpty(v) ? null : v.Trim()).ToList();
-				
-				////check if row contains aligments
-				//if (alignments == null) {
-				//    alignments = CheckAlignmentRow(row);
-				//    if(alignments!=null)
-				//        continue;
-				//}
-				////if aligments is not found and headers 
-				//if (alignments == null && headers == null) {
-				//    headers=row;
-				//    continue;
-				//}
-				rows.Add(row);
-			}
-			//remove first column?
-			if (ValueIsEmpty(headers, 0) && ValueIsEmpty(alignments, 0) && rows.All(r => ValueIsEmpty(r, 0))) {
-				RemoveColumn(headers,0);
-				RemoveColumn(alignments, 0);
-                RemoveColumn(styles,0);
-				rows.ForEach(r=>RemoveColumn(r,0));
-			}
-			//remove lastColumn
-			if (ValueIsEmpty(headers, -1) && ValueIsEmpty(alignments, -1) && rows.All(r => ValueIsEmpty(r, -1))) {
-				RemoveColumn(headers, -1);
-				RemoveColumn(alignments, -1);
+            var headers = headerCells.Select(v => string.IsNullOrEmpty(v) ? null : v.Trim()).ToList();
+            var alignments = CheckAlignmentRow(dividerCells);
+            var styles = CheckStyleRow(dividerCells);
+            var rows = new List<List<string>>();
+
+            foreach (var line in lines)
+            {
+                var cells = SplitTableCells.Split(line);
+                var row = cells.Select(v => string.IsNullOrEmpty(v) ? null : v.Trim()).ToList();
+
+                ////check if row contains aligments
+                //if (alignments == null) {
+                //    alignments = CheckAlignmentRow(row);
+                //    if(alignments!=null)
+                //        continue;
+                //}
+                ////if aligments is not found and headers 
+                //if (alignments == null && headers == null) {
+                //    headers=row;
+                //    continue;
+                //}
+                rows.Add(row);
+            }
+            //remove first column?
+            if (ValueIsEmpty(headers, 0) && ValueIsEmpty(alignments, 0) && rows.All(r => ValueIsEmpty(r, 0)))
+            {
+                RemoveColumn(headers, 0);
+                RemoveColumn(alignments, 0);
+                RemoveColumn(styles, 0);
+                rows.ForEach(r => RemoveColumn(r, 0));
+            }
+            //remove lastColumn
+            if (ValueIsEmpty(headers, -1) && ValueIsEmpty(alignments, -1) && rows.All(r => ValueIsEmpty(r, -1)))
+            {
+                RemoveColumn(headers, -1);
+                RemoveColumn(alignments, -1);
                 RemoveColumn(styles, -1);
                 rows.ForEach(r => RemoveColumn(r, -1));
-			}
+            }
             //merge rows with row separators
-		    var firstRow = 0;
-		    for (int i = 0; i < rows.Count; i++) {
-		        var row = rows[i];
-		        if (IsSeparatorRow(row)) {
-		            var joinedRow = JoinRows(rows, firstRow, i - 1);
-                    for(var j=i;j>=firstRow;j--)
+            var firstRow = 0;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                if (IsSeparatorRow(row))
+                {
+                    var joinedRow = JoinRows(rows, firstRow, i - 1);
+                    for (var j = i; j >= firstRow; j--)
                         rows.RemoveAt(j);
-                    rows.Insert(firstRow,joinedRow);
+                    rows.Insert(firstRow, joinedRow);
                     i = firstRow;
                     firstRow++;
-		        }
-		    }
-			var sb = new StringBuilder();
-			sb.Append("<table>\n");
-			//if alignments are specified, add a colgroup
-			if (alignments != null && alignments.Any(c => !string.IsNullOrEmpty(c))) {
-				sb.Append("<colgroup>\n");
-				foreach (var alignment in alignments) {
-					sb.Append("<col");
-					if (!string.IsNullOrEmpty(alignment))
-						sb.AppendFormat(" align=\"{0}\"", alignment);
-					sb.Append("/>\n");
-				}
-				sb.Append("</colgroup>\n");
-			}
-			//headers
-			if (headers.Count > 0) {
-				sb.Append("<thead>\n");
-				sb.Append("<tr>");
-				for(var i=0;i<headers.Count;i++) {
-				    var header = headers[i];
-				    var attributes = GetAttributes(styles, i);
-					var h = header ?? string.Empty;
-					sb.AppendFormat("<th{1}>{0}</th>", RunSpanGamut(h),attributes);
-				}
-				sb.Append("</tr>\n");
-				sb.Append("</thead>\n");
-			}
-			//rows
-			sb.Append("<tbody>\n");
-			foreach (var row in rows) {
-				sb.Append("<tr>");
-				for (var i=0;i<row.Count;i++) {
-				    var cell = row[i];
-					var c = cell ?? string.Empty;
+                }
+            }
+            var sb = new StringBuilder();
+            sb.Append("<table>\n");
+            //if alignments are specified, add a colgroup
+            if (alignments != null && alignments.Any(c => !string.IsNullOrEmpty(c)))
+            {
+                sb.Append("<colgroup>\n");
+                foreach (var alignment in alignments)
+                {
+                    sb.Append("<col");
+                    if (!string.IsNullOrEmpty(alignment))
+                        sb.AppendFormat(" align=\"{0}\"", alignment);
+                    sb.Append("/>\n");
+                }
+                sb.Append("</colgroup>\n");
+            }
+            //headers
+            if (headers.Count > 0)
+            {
+                sb.Append("<thead>\n");
+                sb.Append("<tr>");
+                for (var i = 0; i < headers.Count; i++)
+                {
+                    var header = headers[i];
                     var attributes = GetAttributes(styles, i);
-                    sb.AppendFormat("<td{1}>{0}</td>", RunSpanGamut(c),attributes);
-				}
-				sb.Append("</tr>\n");
-				
-			}
-			sb.Append("</tbody>\n");
-			sb.Append("</table>\n");
-			return sb.ToString();
-		}
+                    var h = header ?? string.Empty;
+                    sb.AppendFormat("<th{1}>{0}</th>", RunSpanGamut(h), attributes);
+                }
+                sb.Append("</tr>\n");
+                sb.Append("</thead>\n");
+            }
+            //rows
+            sb.Append("<tbody>\n");
+            foreach (var row in rows)
+            {
+                sb.Append("<tr>");
+                for (var i = 0; i < row.Count; i++)
+                {
+                    var cell = row[i];
+                    var c = cell ?? string.Empty;
+                    var attributes = GetAttributes(styles, i);
+                    sb.AppendFormat("<td{1}>{0}</td>", RunSpanGamut(c), attributes);
+                }
+                sb.Append("</tr>\n");
 
-        private string GetAttributes(List<string> styles, int index) {
+            }
+            sb.Append("</tbody>\n");
+            sb.Append("</table>\n");
+            return sb.ToString();
+        }
+
+        private string GetAttributes(List<string> styles, int index)
+        {
             if (styles == null || styles.Count <= index) return string.Empty;
             var style = styles[index];
             return string.Format(@" style=""{0}""", style);
         }
 
-        private List<string> JoinRows(IList<List<string>> rows, int firstRow, int lastRow) {
+        private List<string> JoinRows(IList<List<string>> rows, int firstRow, int lastRow)
+        {
             var joinedRow = new List<string>();
-            for (var i = firstRow; i <= lastRow; i++) {
-                for (int j = 0; j < rows[i].Count; j++) {
+            for (var i = firstRow; i <= lastRow; i++)
+            {
+                for (int j = 0; j < rows[i].Count; j++)
+                {
                     var cell = rows[i][j];
-                    if (j >= joinedRow.Count) {
+                    if (j >= joinedRow.Count)
+                    {
                         joinedRow.Add(cell);
-                    } else {
-                        if(!string.IsNullOrEmpty(cell))
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(cell))
                             joinedRow[j] += " " + cell;
                     }
                 }
@@ -1442,46 +1487,54 @@ namespace MarkdownSharp
             return joinedRow;
         }
 
-        private bool IsSeparatorRow(List<string> row) {
-            foreach (var cell in row) {
-                if (!Regex.IsMatch(cell,@"^\s*[\-]+\s*$")) return false;
+        private bool IsSeparatorRow(List<string> row)
+        {
+            foreach (var cell in row)
+            {
+                if (!Regex.IsMatch(cell, @"^\s*[\-]+\s*$")) return false;
             }
             return true;
         }
 
-        private void RemoveColumn(List<string> list, int index ) {
-			if (list == null||list.Count==0)
-				return;
-			//negative values counts from behind
-			if (index < 0)
-				index = list.Count + index;
-			if (index >= list.Count || index < 0)
-				return;
-			list.RemoveAt(index);
-		}
-		private bool ValueIsEmpty(IList<string> list, int index) {
-			if (list == null)
-				return true;
-			//negative values counts from behind
-			if (index < 0)
-				index = list.Count + index;
-			if (index>=list.Count)
-				return true;
-			if (string.IsNullOrEmpty(list[index]))
-				return true;
-			return false;
-		}
+        private void RemoveColumn(List<string> list, int index)
+        {
+            if (list == null || list.Count == 0)
+                return;
+            //negative values counts from behind
+            if (index < 0)
+                index = list.Count + index;
+            if (index >= list.Count || index < 0)
+                return;
+            list.RemoveAt(index);
+        }
+        private bool ValueIsEmpty(IList<string> list, int index)
+        {
+            if (list == null)
+                return true;
+            //negative values counts from behind
+            if (index < 0)
+                index = list.Count + index;
+            if (index >= list.Count)
+                return true;
+            if (string.IsNullOrEmpty(list[index]))
+                return true;
+            return false;
+        }
         //nowrap on +++++ or ======
         public static Regex NoWrapRule = new Regex(@"^\s*[\+=]+\s*$");
 
-        private List<string> CheckStyleRow(IEnumerable<string> cells) {
+        private List<string> CheckStyleRow(IEnumerable<string> cells)
+        {
             var list = new List<string>();
-            foreach (var cell in cells) {
-                if (string.IsNullOrEmpty(cell)) {
+            foreach (var cell in cells)
+            {
+                if (string.IsNullOrEmpty(cell))
+                {
                     list.Add(null);
                     continue;
                 }
-                if (NoWrapRule.IsMatch(cell)) {
+                if (NoWrapRule.IsMatch(cell))
+                {
                     list.Add("white-space:nowrap;");
                     continue;
                 }
@@ -1489,34 +1542,38 @@ namespace MarkdownSharp
             return list;
         }
 
-        private List<string> CheckAlignmentRow(IEnumerable<string> cells) {
-			var list = new List<string>();
-					foreach (var cell in cells) {
-						if (string.IsNullOrEmpty(cell)) {
-							list.Add(string.Empty);
-							continue;
-						}
-						var align = CheckAlignmentCell(cell);
-						if (align == null)
-							return null;
-						list.Add(align);
-					}
-			return list;
-		}
-		private string CheckAlignmentCell(string cell) {
-			if (string.IsNullOrEmpty(cell) || !AlignmentRule.IsMatch(cell))
-				return null;
-			if (cell[0] == ':' && cell[cell.Length - 1] == ':')
-				return "center";
-			if (cell[0] == ':' )
-				return "left";
-			if (cell[cell.Length - 1] == ':')
-				return "right";
-			return "";
-		}
+        private List<string> CheckAlignmentRow(IEnumerable<string> cells)
+        {
+            var list = new List<string>();
+            foreach (var cell in cells)
+            {
+                if (string.IsNullOrEmpty(cell))
+                {
+                    list.Add(string.Empty);
+                    continue;
+                }
+                var align = CheckAlignmentCell(cell);
+                if (align == null)
+                    return null;
+                list.Add(align);
+            }
+            return list;
+        }
+        private string CheckAlignmentCell(string cell)
+        {
+            if (string.IsNullOrEmpty(cell) || !AlignmentRule.IsMatch(cell))
+                return null;
+            if (cell[0] == ':' && cell[cell.Length - 1] == ':')
+                return "center";
+            if (cell[0] == ':')
+                return "left";
+            if (cell[cell.Length - 1] == ':')
+                return "right";
+            return "";
+        }
         private static Regex _codeSpan = new Regex(@"
                     (?<!\\)   # Character before opening ` can't be a backslash
-                    (`+)      # $1 = Opening run of `
+                    (`{1,2})      # $1 = Opening run of `
                     (.+?)     # $2 = The code block
                     (?<!`)
                     \1
@@ -1801,7 +1858,7 @@ namespace MarkdownSharp
             return s;
         }
 
-        private static Regex _backslashEscapes; 
+        private static Regex _backslashEscapes;
 
         /// <summary>
         /// Encodes any escaped characters such as \`, \*, \[ etc
@@ -1814,7 +1871,7 @@ namespace MarkdownSharp
         {
             return _backslashEscapeTable[match.Value];
         }
-       
+
         private static Regex _unescapes = new Regex("\x1A\\d+\x1A", RegexOptions.Compiled);
 
         /// <summary>
@@ -1863,7 +1920,7 @@ namespace MarkdownSharp
                 if (encode)
                     sb.Append("%" + String.Format("{0:x}", (byte)c));
                 else
-                    sb.Append(c);                
+                    sb.Append(c);
             }
 
             return sb.ToString();
@@ -1908,7 +1965,7 @@ namespace MarkdownSharp
         /// removes any blank lines (only spaces) in the text
         /// </summary>
         private string Normalize(string text)
-        {            
+        {
             var output = new StringBuilder(text.Length);
             var line = new StringBuilder();
             bool valid = false;

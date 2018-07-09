@@ -1,5 +1,4 @@
-﻿using MarkdownSharp;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace MarkdownSharp.Tests
 {
@@ -11,10 +10,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Bold()
         {
-            string input = "This is **bold**. This is also __bold__.";
-            string expected = "<p>This is <strong>bold</strong>. This is also <strong>bold</strong>.</p>\n";
+            var input = "This is **bold**. This is also __bold__.";
+            var expected = "<p>This is <strong>bold</strong>. This is also <strong>bold</strong>.</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -22,10 +21,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Italic()
         {
-            string input = "This is *italic*. This is also _italic_.";
-            string expected = "<p>This is <em>italic</em>. This is also <em>italic</em>.</p>\n";
+            var input = "This is *italic*. This is also _italic_.";
+            var expected = "<p>This is <em>italic</em>. This is also <em>italic</em>.</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -33,10 +32,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Link()
         {
-            string input = "This is [a link][1].\n\n  [1]: http://www.example.com";
-            string expected = "<p>This is <a href=\"http://www.example.com\">a link</a>.</p>\n";
+            var input = "This is [a link][1].\n\n  [1]: http://www.example.com";
+            var expected = "<p>This is <a href=\"http://www.example.com\">a link</a>.</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -44,10 +43,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void LinkBracket()
         {
-            string input = "Have you visited <http://www.example.com> before?";
-            string expected = "<p>Have you visited <a href=\"http://www.example.com\">http://www.example.com</a> before?</p>\n";
+            var input = "Have you visited <http://www.example.com> before?";
+            var expected = "<p>Have you visited <a href=\"http://www.example.com\">http://www.example.com</a> before?</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -55,10 +54,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void LinkBare_withoutAutoHyperLink()
         {
-            string input = "Have you visited http://www.example.com before?";
-            string expected = "<p>Have you visited http://www.example.com before?</p>\n";
+            var input = "Have you visited http://www.example.com before?";
+            var expected = "<p>Have you visited http://www.example.com before?</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -80,10 +79,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void LinkAlt()
         {
-            string input = "Have you visited [example](http://www.example.com) before?";
-            string expected = "<p>Have you visited <a href=\"http://www.example.com\">example</a> before?</p>\n";
+            var input = "Have you visited [example](http://www.example.com) before?";
+            var expected = "<p>Have you visited <a href=\"http://www.example.com\">example</a> before?</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -91,10 +90,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Image()
         {
-            string input = "An image goes here: ![alt text][1]\n\n  [1]: http://www.google.com/intl/en_ALL/images/logo.gif";
-            string expected = "<p>An image goes here: <img src=\"http://www.google.com/intl/en_ALL/images/logo.gif\" alt=\"alt text\" /></p>\n";
+            var input = "An image goes here: ![alt text][1]\n\n  [1]: http://www.google.com/intl/en_ALL/images/logo.gif";
+            var expected = "<p>An image goes here: <img src=\"http://www.google.com/intl/en_ALL/images/logo.gif\" alt=\"alt text\" /></p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -102,10 +101,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Blockquote()
         {
-            string input = "Here is a quote\n\n> Sample blockquote\n";
-            string expected = "<p>Here is a quote</p>\n\n<blockquote>\n  <p>Sample blockquote</p>\n</blockquote>\n";
+            var input = "Here is a quote\n\n> Sample blockquote\n";
+            var expected = "<p>Here is a quote</p>\n\n<blockquote>\n  <p>Sample blockquote</p>\n</blockquote>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -113,10 +112,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void NumberList()
         {
-            string input = "A numbered list:\n\n1. a\n2. b\n3. c\n";
-            string expected = "<p>A numbered list:</p>\n\n<ol>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ol>\n";
+            var input = "A numbered list:\n\n1. a\n2. b\n3. c\n";
+            var expected = "<p>A numbered list:</p>\n\n<ol>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ol>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -124,10 +123,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void BulletList()
         {
-            string input = "A bulleted list:\n\n- a\n- b\n- c\n";
-            string expected = "<p>A bulleted list:</p>\n\n<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ul>\n";
+            var input = "A bulleted list:\n\n- a\n- b\n- c\n";
+            var expected = "<p>A bulleted list:</p>\n\n<ul>\n<li>a</li>\n<li>b</li>\n<li>c</li>\n</ul>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -135,10 +134,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Header1()
         {
-            string input = "#Header 1\nHeader 1\n========";
-            string expected = "<h1>Header 1</h1>\n\n<h1>Header 1</h1>\n";
+            var input = "#Header 1\nHeader 1\n========";
+            var expected = "<h1>Header 1</h1>\n\n<h1>Header 1</h1>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -146,10 +145,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Header2()
         {
-            string input = "##Header 2\nHeader 2\n--------";
-            string expected = "<h2>Header 2</h2>\n\n<h2>Header 2</h2>\n";
+            var input = "##Header 2\nHeader 2\n--------";
+            var expected = "<h2>Header 2</h2>\n\n<h2>Header 2</h2>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -157,21 +156,30 @@ namespace MarkdownSharp.Tests
         [Test]
         public void CodeBlock()
         {
-            string input = "code sample:\n\n    <head>\n    <title>page title</title>\n    </head>\n";
-            string expected = "<p>code sample:</p>\n\n<pre><code>&lt;head&gt;\n&lt;title&gt;page title&lt;/title&gt;\n&lt;/head&gt;\n</code></pre>\n";
+            var input = "code sample:\n\n    <head>\n    <title>page title</title>\n    </head>\n";
+            var expected = "<p>code sample:</p>\n\n<pre><code>&lt;head&gt;\n&lt;title&gt;page title&lt;/title&gt;\n&lt;/head&gt;\n</code></pre>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
+        [Test]
+        public void CodeBlockBacktics()
+        {
+            var input = "code sample:\n\n```    <head>\n    <title>page title</title>\n    </head>\n```No more code\n";
+            var expected = "<p>code sample:</p>\n\n<pre><code class=\"code-block\">    &lt;head&gt;\n    &lt;title&gt;page title&lt;/title&gt;\n    &lt;/head&gt;</code></pre>\n\n<p>No more code</p>\n";
 
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
         [Test]
         public void CodeSpan()
         {
-            string input = "HTML contains the `<blink>` tag";
-            string expected = "<p>HTML contains the <code>&lt;blink&gt;</code> tag</p>\n";
+            var input = "HTML contains the `<blink>` tag";
+            var expected = "<p>HTML contains the <code>&lt;blink&gt;</code> tag</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -179,10 +187,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void HtmlPassthrough()
         {
-            string input = "<div>\nHello World!\n</div>\n";
-            string expected = "<div>\nHello World!\n</div>\n";
+            var input = "<div>\nHello World!\n</div>\n";
+            var expected = "<div>\nHello World!\n</div>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -190,10 +198,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void Escaping()
         {
-            string input = @"\`foo\`";
-            string expected = "<p>`foo`</p>\n";
+            var input = @"\`foo\`";
+            var expected = "<p>`foo`</p>\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -201,10 +209,10 @@ namespace MarkdownSharp.Tests
         [Test]
         public void HorizontalRule()
         {
-            string input = "* * *\n\n***\n\n*****\n\n- - -\n\n---------------------------------------\n\n";
-            string expected = "<hr />\n\n<hr />\n\n<hr />\n\n<hr />\n\n<hr />\n";
+            var input = "* * *\n\n***\n\n*****\n\n- - -\n\n---------------------------------------\n\n";
+            var expected = "<hr />\n\n<hr />\n\n<hr />\n\n<hr />\n\n<hr />\n";
 
-            string actual = m.Transform(input);
+            var actual = m.Transform(input);
 
             Assert.AreEqual(expected, actual);
         }
@@ -317,7 +325,7 @@ Content Cell  | Content Cell
 | server		| authenticating the resource owner and obtaining authorization.		|
 |--------------	|---------------------------------------------------------------------	|-----------------------------
 ";
-            string expected = @"<table>
+            var expected = @"<table>
 <thead>
 <tr><th>Role</th><th>Description</th><th>ImageVault component</th></tr>
 </thead>
@@ -349,7 +357,7 @@ state           | RECOMMENDED.  An opaque value used by the client to maintain s
                 | cross-site request forgery as described in [Section 10.12](https://tools.ietf.org/html/rfc6749#section-10.12).
 ---------------	|-----------------------------------------------------------------------------------------------------------------------------
 ";
-            string expected = @"<table>
+            var expected = @"<table>
 <thead>
 <tr><th>Parameter Name</th><th>Description</th></tr>
 </thead>
