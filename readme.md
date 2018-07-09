@@ -188,6 +188,14 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 
 <a name="changelog"></a>
 ## Changelog
+
+### v6.3.0 - 2018-07-09
+Markdown now support code blocks with three backticks 
+``` 
+code block 
+  Some indented row
+```
+
 ### v6.2.1 - 2018-01-12
 Markdown tables now adds nowrap to a column when a header separator contains of = instead of -
 
