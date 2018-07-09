@@ -1293,7 +1293,7 @@ namespace MarkdownSharp
             codeBlock = EncodeCode(codeBlock);
             codeBlock = _newlinesLeadingTrailing.Replace(codeBlock, "");
 
-            return string.Format("\n\n<pre><code class=\"code-block\">{0}</code></pre>\n\n", codeBlock);
+            return $"\n\n<pre><code class=\"code-block\">{codeBlock}</code></pre>\n\n";
         }
         private static readonly Regex TableRules = new Regex(@"
 (?<header>              #table header

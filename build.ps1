@@ -21,7 +21,16 @@ function RunTests([string]$testAssemblyPath) {
 	}
 	. $testRunner $testAssemblyPath
 }
-
+#Finds the first available path
+function findFirstAvailable($paths){
+    
+    for($i=0;$i -lt $paths.length;$i++){
+        if(test-path $paths[$i]) {
+            return $paths[$i]
+        }
+    }
+    return $null
+}
 #setup local paths if not defined (yes I'm lazy)
 if($env:GallioEcho -eq $null) {
 	$env:GallioEcho="D:\usr\bin\NUnit\bin\net-4.0\nunit-console.exe"
@@ -52,8 +61,15 @@ if(-not(Test-Path $nugetExe)){
 	Die "Failed restoring nuget packages"
 }
 
+# Detect MSBuild 15.0 path
+$defaultMsbuild="$(Get-Content env:windir)\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"
+$pfdir = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0];
+$vs2017dir = join-path $pfDir "Microsoft Visual Studio\2017"
+$possiblePaths = ((join-path $vs2017dir "Community\MSBuild\15.0\Bin\MSBuild.exe"),(join-path $vs2017dir "Professional\MSBuild\15.0\Bin\MSBuild.exe"),(join-path $vs2017dir "Enterprise\MSBuild\15.0\Bin\MSBuild.exe"),$defaultMsbuild)
+$msbuild = findFirstAvailable $possiblePaths
+
 #build solution
-& "$(Get-Content env:windir)\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" "PowerShell.sln" /p:Configuration=$config 
+& "$msbuild" "PowerShell.sln" /p:Configuration=$config 
 
  if($LASTEXITCODE -ne 0) {
 	Die "Failed building solution"
