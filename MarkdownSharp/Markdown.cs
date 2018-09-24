@@ -1629,6 +1629,8 @@ namespace MarkdownSharp
             RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
         private static Regex _strictItalic = new Regex(@"([\W_]|^) (\*|_) (?=\S) ([^\r\*_]*?\S) \2 ([\W_]|$)",
             RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
+        private static Regex _strikethrough = new Regex(@"(\~) (?=\S) (.+?) (?<=\S) \1",
+            RegexOptions.IgnorePatternWhitespace | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Turn Markdown *italics* and **bold** into HTML strong and em tags
@@ -1647,6 +1649,8 @@ namespace MarkdownSharp
                 text = _bold.Replace(text, "<strong>$2</strong>");
                 text = _italic.Replace(text, "<em>$2</em>");
             }
+
+            text = _strikethrough.Replace(text, "<del>$2</del>");
             return text;
         }
 

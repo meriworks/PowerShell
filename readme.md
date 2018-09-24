@@ -189,6 +189,10 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 <a name="changelog"></a>
 ## Changelog
 
+### v6.4.0 - 2018-09-24
+Markdown now support deleted text blocks
+~deleted text~
+
 ### v6.3.0 - 2018-07-09
 Markdown now support code blocks with three backticks 
 ``` 

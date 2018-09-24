@@ -207,6 +207,16 @@ namespace MarkdownSharp.Tests
         }
 
         [Test]
+        public void StrikeThroughTest()
+        {
+            var input = "some ~data~\n\nanother~test~ prod";
+            var expected = "<p>some <del>data</del></p>\n\n<p>another<del>test</del> prod</p>\n";
+
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
+        [Test]
         public void HorizontalRule()
         {
             var input = "* * *\n\n***\n\n*****\n\n- - -\n\n---------------------------------------\n\n";
