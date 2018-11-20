@@ -190,11 +190,13 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 ## Changelog
 
 ### v6.4.1 - 2018-11-20
-Fixed issue with embedded markdown not escaped inside code blocks (```)
+* Fixed issue with embedded markdown not escaped inside code blocks (```)
 
-```
-#test
-```
+	```
+	#test
+	```
+
+* Exported MarkdownSharp modification as separate nuget package, Meriworks.Markdown
 
 ### v6.4.0 - 2018-09-24
 Markdown now support deleted text blocks using (\~deleted text\~)

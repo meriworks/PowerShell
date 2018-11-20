@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata minClientVersion="2.8">
+        <id>Meriworks.Markdown</id>
+        <version>$version$</version>
+        <authors>dhvik</authors>
+        <licenseUrl>https://raw.githubusercontent.com/meriworks/PowerShell/master/LICENSE.md</licenseUrl>
+        <projectUrl>https://github.com/meriworks/PowerShell</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Markdown To Html. Based on MarkdownSharp</description>
+        <tags>Meriworks Markdown MarkdownSharp</tags>
+        <releaseNotes>
+        </releaseNotes>
+        <developmentDependency>false</developmentDependency>
+    </metadata>
+</package>

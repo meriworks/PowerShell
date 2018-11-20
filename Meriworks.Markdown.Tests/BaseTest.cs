@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using System.Diagnostics;
 
-namespace MarkdownSharp.Tests
+namespace Meriworks.Markdown.Tests
 {
     public class BaseTest
     {

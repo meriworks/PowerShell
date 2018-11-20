@@ -1,4 +1,4 @@
-﻿using MarkdownSharp;
+﻿using Meriworks.Markdown;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -58,7 +58,7 @@ namespace Meriworks.PowerShell.Cmdlets {
             var file = new FileInfo(InputFile);
             var outFile = new FileInfo(OutputFile);
             if (!file.Exists)
-                throw new FileNotFoundException(string.Format("File {0} is missing", InputFile), InputFile);
+                throw new FileNotFoundException($"File {InputFile} is missing", InputFile);
             if (outFile.Exists)
                 throw new ApplicationException("Outfile " + OutputFile + " exists, cannot continue");
 
@@ -66,7 +66,7 @@ namespace Meriworks.PowerShell.Cmdlets {
             var data = ReadFile(file);
             //convert to html
             var options = new MarkdownOptions { EmptyElementSuffix = "/>" };
-            var m = new Markdown(options);
+            var m = new Markdown.Markdown(options);
             data = m.Transform(data);
 
             //apply template
@@ -194,7 +194,7 @@ namespace Meriworks.PowerShell.Cmdlets {
         internal string FillTemplate(string templateData, Dictionary<string, string> dict) {
             return Regex.Replace(templateData, @"\$\{(?<name>[^\}]+)\}", m => {
                 var name = m.Groups[1].Value;
-                return dict.ContainsKey(name) ? dict[name] : string.Format(@"Cannot find value for token '{0}'", name);
+                return dict.ContainsKey(name) ? dict[name] : $@"Cannot find value for token '{name}'";
             });
         }
         #endregion

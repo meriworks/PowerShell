@@ -8,8 +8,8 @@
     <ProjectGuid>{37619116-CCE8-465A-8B1F-081CA53364BB}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MarkdownSharp</RootNamespace>
-    <AssemblyName>MarkdownSharp</AssemblyName>
+    <RootNamespace>Meriworks.Markdown</RootNamespace>
+    <AssemblyName>Meriworks.Markdown</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <StartupObject>
@@ -110,6 +110,9 @@
       <ProductName>Windows Installer 3.1</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Meriworks.Markdown.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

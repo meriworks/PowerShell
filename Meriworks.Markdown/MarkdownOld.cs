@@ -54,7 +54,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace MarkdownSharp
+namespace Meriworks.Markdown
 {
     [Obsolete("This old version is included only for historical comparison purposes; use at your own risk!")]
     public class MarkdownOld

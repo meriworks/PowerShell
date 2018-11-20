@@ -1,8 +1,7 @@
 using System.Configuration;
-using MarkdownSharp;
 using NUnit.Framework;
 
-namespace MarkdownSharp.Tests
+namespace Meriworks.Markdown.Tests
 {
     [TestFixture]
     public class ConfigTest

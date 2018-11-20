@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarkdownSharp", "MarkdownSharp\MarkdownSharp.csproj", "{37619116-CCE8-465A-8B1F-081CA53364BB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meriworks.Markdown", "Meriworks.Markdown\Meriworks.Markdown.csproj", "{37619116-CCE8-465A-8B1F-081CA53364BB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarkdownSharp.Tests", "MarkdownSharp.Tests\MarkdownSharp.Tests.csproj", "{1F76D227-9B91-475B-9B64-B7A3D0EE7E3D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meriworks.Markdown.Tests", "Meriworks.Markdown.Tests\Meriworks.Markdown.Tests.csproj", "{1F76D227-9B91-475B-9B64-B7A3D0EE7E3D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meriworks.PowerShell", "Meriworks.PowerShell\Meriworks.PowerShell.csproj", "{0A348CDC-7484-4237-805D-740E07C393F7}"
 EndProject

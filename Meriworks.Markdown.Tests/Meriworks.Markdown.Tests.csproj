@@ -8,8 +8,8 @@
     <ProjectGuid>{1F76D227-9B91-475B-9B64-B7A3D0EE7E3D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MarkdownSharp.Tests</RootNamespace>
-    <AssemblyName>MarkdownSharp.Tests</AssemblyName>
+    <RootNamespace>Meriworks.Markdown.Tests</RootNamespace>
+    <AssemblyName>Meriworks.Markdown.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
@@ -125,7 +125,7 @@
     <None Include="source\perl\Markdown.102b8.pl" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MarkdownSharp\MarkdownSharp.csproj">
+    <ProjectReference Include="..\Meriworks.Markdown\Meriworks.Markdown.csproj">
       <Project>{37619116-CCE8-465A-8B1F-081CA53364BB}</Project>
       <Name>MarkdownSharp</Name>
     </ProjectReference>

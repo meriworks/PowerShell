@@ -93,6 +93,7 @@ if($testsFailed -ne 0) {
 
 #pack nuget
 . $nugetExe pack "Meriworks.PowerShell\Meriworks.PowerShell.nuspec" -version $currentVersion -properties "configuration=$config" #-nopackageanalysis
+. $nugetExe pack "Meriworks.Markdown\Meriworks.Markdown.csproj" -version $currentVersion -properties "configuration=$config" #-nopackageanalysis
 
  if($LASTEXITCODE -ne 0) {
 	Die "Failed packaging nuspec"

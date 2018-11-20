@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.IO;
-using MarkdownSharp;
 
 using NUnit.Framework;
 
 
-namespace MarkdownSharp.Tests 
+namespace Meriworks.Markdown.Tests 
 {
     [TestFixture]
     public class MDTestTests : BaseTest

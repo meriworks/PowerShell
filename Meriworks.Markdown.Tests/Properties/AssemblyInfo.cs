@@ -6,11 +6,11 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 //
-[assembly : AssemblyTitle("MarkdownSharp.Tests")]
+[assembly : AssemblyTitle("Meriworks.Markdown.Tests")]
 [assembly : AssemblyDescription("")]
 [assembly : AssemblyConfiguration("")]
 [assembly : AssemblyCompany("")]
-[assembly: AssemblyProduct("MarkdownSharp.Tests")]
+[assembly: AssemblyProduct("Meriworks.Markdown.Tests")]
 [assembly : AssemblyCopyright("")]
 [assembly : AssemblyTrademark("")]
 [assembly : AssemblyCulture("")]

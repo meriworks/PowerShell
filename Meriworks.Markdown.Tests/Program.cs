@@ -4,7 +4,7 @@ using System.Text;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
-namespace MarkdownSharp.Tests
+namespace Meriworks.Markdown.Tests
 {
     class Program
     {
@@ -58,7 +58,7 @@ namespace MarkdownSharp.Tests
         /// </summary>
         private static void AdHocTest()
         {
-            var m = new MarkdownSharp.Markdown();
+            var m = new Markdown();
             //var m = new MarkdownSharp.MarkdownOld();
 
             //string input = "<div class=\"inlinepage\">\n<div class=\"toggleableend\">\nfoo\n</div>\n</div>";
@@ -93,7 +93,7 @@ namespace MarkdownSharp.Tests
         /// </remarks>
         static void Test(string testfolder)
         {
-            var m = new MarkdownSharp.Markdown();
+            var m = new Markdown();
 
             Console.WriteLine();
             Console.WriteLine(@"MarkdownSharp v" + m.Version + @" test run on " + Path.DirectorySeparatorChar + testfolder);
@@ -254,7 +254,7 @@ namespace MarkdownSharp.Tests
 
             Console.WriteLine();
             Console.WriteLine();
-            Console.WriteLine(@"MarkdownSharp v" + new MarkdownSharp.Markdown().Version + " benchmark, takes 10 ~ 30 seconds...");
+            Console.WriteLine(@"MarkdownSharp v" + new Markdown().Version + " benchmark, takes 10 ~ 30 seconds...");
             Console.WriteLine();
 
             Benchmark(FileContents(Path.Combine("benchmark", "markdown-example-short-1.text")), 4000);
@@ -272,7 +272,7 @@ namespace MarkdownSharp.Tests
         /// </summary>
         static void Benchmark(string text, int iterations)
         {
-            var m = new MarkdownSharp.Markdown();
+            var m = new Markdown();
 
             var sw = new Stopwatch();
             sw.Start();
