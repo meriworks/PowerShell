@@ -369,23 +369,42 @@ namespace MarkdownSharp
             return text + "\n";
         }
 
+        private class Block
+        {
+            public string Text { get; set; }
+            public bool ParsingDone { get; set; }
+            public Block Next { get; set; }
 
+            public string Concat()
+            {
+                var sb = new StringBuilder(Text);
+                var next = Next;
+                while (next != null)
+                {
+                    sb.Append(next.Text);
+                    next = next.Next;
+                }
+                return sb.ToString();
+            }
+        }
         /// <summary>
         /// Perform transformations that form block-level tags like paragraphs, headers, and list items.
         /// </summary>
         private string RunBlockGamut(string text)
         {
-            text = DoHeaders(text);
-            text = DoTables(text);
-            text = DoHorizontalRules(text);
-            text = DoLists(text);
-            text = DoCodeBlocks(text);
-            text = DoCodeBlockWithBackticks(text);
-            text = DoBlockQuotes(text);
+            var block = new Block { Text = text };
+            DoCodeBlockWithBackticks(block);
+            DoHeaders(block);
+            DoTables(block);
+            DoHorizontalRules(block);
+            DoLists(block);
+            DoCodeBlocks(block);
+            DoBlockQuotes(block);
             // We already ran HashHTMLBlocks() before, in Markdown(), but that
             // was to escape raw HTML in the original Markdown source. This time,
             // we're escaping the markup we've just created, so that we don't wrap
             // <p> tags around block-level tags.
+            text = block.Concat();
             text = HashHTMLBlocks(text);
 
             text = FormParagraphs(text);
@@ -1074,13 +1093,27 @@ namespace MarkdownSharp
         /// ...  
         /// ###### Header 6  
         /// </remarks>
-        private string DoHeaders(string text)
+        private void DoHeaders(Block block)
         {
-            text = _headerSetext.Replace(text, new MatchEvaluator(SetextHeaderEvaluator));
-            text = _headerAtx.Replace(text, new MatchEvaluator(AtxHeaderEvaluator));
-            return text;
+            DoBlockReplace(block, text =>
+            {
+                text = _headerSetext.Replace(text, new MatchEvaluator(SetextHeaderEvaluator));
+                text = _headerAtx.Replace(text, new MatchEvaluator(AtxHeaderEvaluator));
+                return text;
+            });
         }
 
+        private static void DoBlockReplace(Block block, Func<string, string> replaceFunc)
+        {
+            while (block != null)
+            {
+                if (!block.ParsingDone)
+                {
+                    block.Text = replaceFunc(block.Text);
+                }
+                block = block.Next;
+            }
+        }
         private string SetextHeaderEvaluator(Match match)
         {
             string header = match.Groups[1].Value;
@@ -1116,9 +1149,9 @@ namespace MarkdownSharp
         /// ---
         /// - - -
         /// </remarks>
-        private string DoHorizontalRules(string text)
+        private void DoHorizontalRules(Block block)
         {
-            return _horizontalRules.Replace(text, "<hr" + _emptyElementSuffix + "\n");
+            DoBlockReplace(block, text => _horizontalRules.Replace(text, "<hr" + _emptyElementSuffix + "\n"));
         }
         private static string _wholeList = string.Format(@"
             (                               # $1 = whole list
@@ -1146,6 +1179,10 @@ namespace MarkdownSharp
         private static Regex _listTopLevel = new Regex(@"(?:(?<=\n\n)|\A\n?)" + _wholeList,
             RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
+        private void DoLists(Block block)
+        {
+            DoBlockReplace(block, DoLists);
+        }
         /// <summary>
         /// Turn Markdown lists into HTML ul and ol and li tags
         /// </summary>
@@ -1256,10 +1293,9 @@ namespace MarkdownSharp
         /// <summary>
         /// /// Turn Markdown 4-space indented code into HTML pre code blocks
         /// </summary>
-        private string DoCodeBlocks(string text)
+        private void DoCodeBlocks(Block block)
         {
-            text = _codeBlock.Replace(text, new MatchEvaluator(CodeBlockEvaluator));
-            return text;
+            DoBlockReplace(block, text => _codeBlock.Replace(text, CodeBlockEvaluator));
         }
 
         private string CodeBlockEvaluator(Match match)
@@ -1280,21 +1316,59 @@ namespace MarkdownSharp
         /// <summary>
         /// /// Turn Markdown 4-space indented code into HTML pre code blocks
         /// </summary>
-        private string DoCodeBlockWithBackticks(string text)
+        private void DoCodeBlockWithBackticks(Block block)
         {
-            text = CodeBlockBackticks.Replace(text, CodeBlockWithBackticksEvaluator);
-            return text;
+            while (block != null)
+            {
+                if (block.Text.Length >= 6)
+                {
+                    var matchCollection = CodeBlockBackticks.Matches(block.Text);
+                    var nextBlock = block.Next;
+                    if (matchCollection.Count > 0)
+                    {
+                        var origText = block.Text;
+                        var textStart = 0;
+                        foreach (Match match in matchCollection)
+                        {
+                            var textStop = match.Index;
+                            var blockText = match.Groups[1].Value;
+                            //save preblock
+                            if (textStop > textStart)
+                            {
+                                //pre text replaces current block and add new block for match
+                                block.Text = origText.Substring(textStart, textStop - textStart);
+                                var newBlock = new Block();
+                                block.Next = newBlock;
+                                block = newBlock;
+                            }
+                            //set block for match and mark as parsing done
+
+                            blockText = EncodeCode(blockText);
+                            blockText = _newlinesLeadingTrailing.Replace(blockText, "");
+
+                            block.Text = $"\n\n<pre><code class=\"code-block\">{blockText}</code></pre>\n\n";
+                            block.Next = nextBlock;
+                            block.ParsingDone = true;
+                            textStart = match.Index + match.Length;
+                        }
+                        //add trailing textblock
+                        if (textStart < origText.Length)
+                        {
+                            var newBlock = new Block
+                            {
+                                Next = nextBlock,
+                                Text = origText.Substring(textStart)
+                            };
+                            block.Next = newBlock;
+                            block = newBlock;
+                        }
+                    }
+                }
+
+                block = block.Next;
+            }
         }
 
-        private string CodeBlockWithBackticksEvaluator(Match match)
-        {
-            string codeBlock = match.Groups[1].Value;
-
-            codeBlock = EncodeCode(codeBlock);
-            codeBlock = _newlinesLeadingTrailing.Replace(codeBlock, "");
-
-            return $"\n\n<pre><code class=\"code-block\">{codeBlock}</code></pre>\n\n";
-        }
         private static readonly Regex TableRules = new Regex(@"
 (?<header>              #table header
   ^                #start of line
@@ -1340,9 +1414,9 @@ namespace MarkdownSharp
 \|               #pipe is the separator
 ", RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
         private static readonly Regex AlignmentRule = new Regex(@"^[:]?-+[:]?$", RegexOptions.Compiled);
-        private string DoTables(string text)
+        private void DoTables(Block block)
         {
-            return TableRules.Replace(text, TableEvaluator);
+            DoBlockReplace(block, text => TableRules.Replace(text, TableEvaluator));
         }
 
         private string TableEvaluator(Match match)
@@ -1679,9 +1753,9 @@ namespace MarkdownSharp
         /// <summary>
         /// Turn Markdown > quoted blocks into HTML blockquote blocks
         /// </summary>
-        private string DoBlockQuotes(string text)
+        private void DoBlockQuotes(Block block)
         {
-            return _blockquote.Replace(text, new MatchEvaluator(BlockQuoteEvaluator));
+            DoBlockReplace(block,text=>_blockquote.Replace(text, new MatchEvaluator(BlockQuoteEvaluator)));
         }
 
         private string BlockQuoteEvaluator(Match match)

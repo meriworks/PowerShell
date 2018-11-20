@@ -174,6 +174,16 @@ namespace MarkdownSharp.Tests
             Assert.AreEqual(expected, actual);
         }
         [Test]
+        public void CodeBlockBackticsWithEmbeddedHeadline()
+        {
+            var input = "```\n#test```";
+            var expected = "<pre><code class=\"code-block\">#test</code></pre>\n";
+
+            var actual = m.Transform(input);
+
+            Assert.AreEqual(expected, actual);
+        }
+        [Test]
         public void CodeSpan()
         {
             var input = "HTML contains the `<blink>` tag";
