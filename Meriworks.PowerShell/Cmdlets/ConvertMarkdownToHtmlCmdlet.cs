@@ -66,7 +66,7 @@ namespace Meriworks.PowerShell.Cmdlets {
             var data = ReadFile(file);
             //convert to html
             var options = new MarkdownOptions { EmptyElementSuffix = "/>" };
-            var m = new Markdown.Markdown(options);
+            var m = new Markdown.MarkdownParser(options);
             data = m.Transform(data);
 
             //apply template

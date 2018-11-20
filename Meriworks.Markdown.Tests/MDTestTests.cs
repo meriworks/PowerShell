@@ -17,7 +17,7 @@ namespace Meriworks.Markdown.Tests
 
         public static IEnumerable<TestCaseData> GetTests()
         {
-            Markdown m = new Markdown();
+            MarkdownParser m = new MarkdownParser();
             Assembly assembly = Assembly.GetAssembly(typeof(BaseTest));
             string namespacePrefix = String.Concat(assembly.GetName().Name, '.', folder);
             string[] resourceNames = assembly.GetManifestResourceNames();

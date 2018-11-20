@@ -132,7 +132,7 @@ namespace Meriworks.Markdown
     /// Markdown allows you to write using an easy-to-read, easy-to-write plain text format, 
     /// then convert it to structurally valid XHTML (or HTML).
     /// </summary>
-    public class Markdown
+    public class MarkdownParser
     {
         private const string _version = "1.13";
 
@@ -141,7 +141,7 @@ namespace Meriworks.Markdown
         /// <summary>
         /// Create a new Markdown instance using default options
         /// </summary>
-        public Markdown() : this(false)
+        public MarkdownParser() : this(false)
         {
         }
 
@@ -157,7 +157,7 @@ namespace Meriworks.Markdown
         ///     Markdown.EncodeProblemUrlCharacters (true/false) 
         ///     
         /// </summary>
-        public Markdown(bool loadOptionsFromConfigFile)
+        public MarkdownParser(bool loadOptionsFromConfigFile)
         {
             if (!loadOptionsFromConfigFile) return;
 
@@ -191,7 +191,7 @@ namespace Meriworks.Markdown
         /// <summary>
         /// Create a new Markdown instance and set the options from the MarkdownOptions object.
         /// </summary>
-        public Markdown(MarkdownOptions options)
+        public MarkdownParser(MarkdownOptions options)
         {
             _autoHyperlink = options.AutoHyperlink;
             _autoNewlines = options.AutoNewlines;
@@ -309,7 +309,7 @@ namespace Meriworks.Markdown
         /// <summary>
         /// In the static constuctor we'll initialize what stays the same across all transforms.
         /// </summary>
-        static Markdown()
+        static MarkdownParser()
         {
             // Table of hash values for escaped characters:
             _escapeTable = new Dictionary<string, string>();

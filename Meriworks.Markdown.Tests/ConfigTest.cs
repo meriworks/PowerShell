@@ -17,7 +17,7 @@ namespace Meriworks.Markdown.Tests
             settings.Set("Markdown.LinkEmails", "false");
             settings.Set("Markdown.StrictBoldItalic", "true");
             
-            var markdown = new Markdown(true);
+            var markdown = new MarkdownParser(true);
             Assert.AreEqual(true, markdown.AutoHyperlink);
             Assert.AreEqual(true, markdown.AutoNewLines);
             Assert.AreEqual(">", markdown.EmptyElementSuffix);
@@ -29,7 +29,7 @@ namespace Meriworks.Markdown.Tests
         [Test]
         public void TestNoLoadFromConfigFile()
         {
-            foreach (var markdown in new[] {new Markdown(), new Markdown(false)})
+            foreach (var markdown in new[] {new MarkdownParser(), new MarkdownParser(false)})
             {
                 Assert.AreEqual(false, markdown.AutoHyperlink);
                 Assert.AreEqual(false, markdown.AutoNewLines);
@@ -43,7 +43,7 @@ namespace Meriworks.Markdown.Tests
         [Test]
         public void TestAutoHyperlink()
         {
-            var markdown = new Markdown();  
+            var markdown = new MarkdownParser();  
             Assert.IsFalse(markdown.AutoHyperlink);
             Assert.AreEqual("<p>foo http://example.com bar</p>\n", markdown.Transform("foo http://example.com bar"));
             markdown.AutoHyperlink = true;
@@ -53,7 +53,7 @@ namespace Meriworks.Markdown.Tests
         [Test]
         public void TestAutoNewLines()
         {
-            var markdown = new Markdown();
+            var markdown = new MarkdownParser();
             Assert.IsFalse(markdown.AutoNewLines);
             Assert.AreEqual("<p>Line1\nLine2</p>\n", markdown.Transform("Line1\nLine2"));
             markdown.AutoNewLines = true;
@@ -63,7 +63,7 @@ namespace Meriworks.Markdown.Tests
         [Test]
         public void TestEmptyElementSuffix()
         {
-            var markdown = new Markdown();
+            var markdown = new MarkdownParser();
             Assert.AreEqual(" />", markdown.EmptyElementSuffix);
             Assert.AreEqual("<hr />\n", markdown.Transform("* * *"));
             markdown.EmptyElementSuffix = ">";
@@ -73,7 +73,7 @@ namespace Meriworks.Markdown.Tests
         [Test]
         public void TestEncodeProblemUrlCharacters()
         {
-            var markdown = new Markdown();
+            var markdown = new MarkdownParser();
             Assert.IsFalse(markdown.EncodeProblemUrlCharacters);
             Assert.AreEqual("<p><a href=\"/'*_[]()/\">Foo</a></p>\n", markdown.Transform("[Foo](/'*_[]()/)"));
             markdown.EncodeProblemUrlCharacters = true;
@@ -83,7 +83,7 @@ namespace Meriworks.Markdown.Tests
         [Test]
         public void TestLinkEmails()
         {
-            var markdown = new Markdown();
+            var markdown = new MarkdownParser();
             Assert.IsTrue(markdown.LinkEmails);
             //when transforming an email, the email address link is encoded a bit randomly to protect the email address
             //from simple email scanners
@@ -108,7 +108,7 @@ namespace Meriworks.Markdown.Tests
         [Test]
         public void TestStrictBoldItalic()
         {
-            var markdown = new Markdown();
+            var markdown = new MarkdownParser();
             Assert.IsFalse(markdown.StrictBoldItalic);
             Assert.AreEqual("<p>before<strong>bold</strong>after before<em>italic</em>after</p>\n", markdown.Transform("before**bold**after before_italic_after"));
             markdown.StrictBoldItalic = true;

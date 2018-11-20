@@ -5,7 +5,7 @@ namespace Meriworks.Markdown.Tests
     [TestFixture]
     public class SimpleTests : BaseTest
     {
-        private Markdown m = new Markdown();
+        private MarkdownParser m = new MarkdownParser();
 
         [Test]
         public void Bold()

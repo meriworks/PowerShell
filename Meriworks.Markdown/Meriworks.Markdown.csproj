@@ -90,7 +90,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Markdown.cs" />
+    <Compile Include="MarkdownParser.cs" />
     <Compile Include="MarkdownOld.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
