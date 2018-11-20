@@ -20,6 +20,6 @@
         <file src="nuspec\build\**\*.*" target="build\"/>
         <file src="nuspec\tools\**\*.*" target="tools\"/>
         <file src="bin\$configuration$\Meriworks.PowerShell.dll" target="tools\"/>
-        <file src="bin\$configuration$\MarkdownSharp.dll" target="tools\"/>
+        <file src="bin\$configuration$\Meriworks.Markdown.dll" target="tools\"/>
     </files>
 </package>
