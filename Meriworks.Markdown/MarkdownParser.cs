@@ -1328,13 +1328,23 @@ namespace Meriworks.Markdown
                     {
                         var origText = block.Text;
                         var textStart = 0;
-                        foreach (Match match in matchCollection)
+                        for (var index = 0; index < matchCollection.Count; index++)
                         {
+                            Match match = matchCollection[index];
                             var textStop = match.Index;
                             var blockText = match.Groups[1].Value;
+                            
+                            //first block replaces current one, next one needs a new block
+                            if (index > 0)
+                            {
+                                var newBlock = new Block();
+                                block.Next = newBlock;
+                                block = newBlock;
+                            }
                             //save preblock
                             if (textStop > textStart)
                             {
+                                
                                 //pre text replaces current block and add new block for match
                                 block.Text = origText.Substring(textStart, textStop - textStart);
                                 var newBlock = new Block();
@@ -1347,7 +1357,7 @@ namespace Meriworks.Markdown
                             blockText = _newlinesLeadingTrailing.Replace(blockText, "");
 
                             block.Text = $"\n\n<pre><code class=\"code-block\">{blockText}</code></pre>\n\n";
-                            block.Next = nextBlock;
+                            
                             block.ParsingDone = true;
                             textStart = match.Index + match.Length;
                         }
@@ -1356,12 +1366,14 @@ namespace Meriworks.Markdown
                         {
                             var newBlock = new Block
                             {
-                                Next = nextBlock,
                                 Text = origText.Substring(textStart)
                             };
                             block.Next = newBlock;
                             block = newBlock;
                         }
+                        //keep pointer to next block
+                        block.Next = nextBlock;
+
                     }
                 }
 
