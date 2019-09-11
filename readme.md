@@ -189,6 +189,9 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 <a name="changelog"></a>
 ## Changelog
 
+###  6.4.2 - 2019-09-11
+* Fixed issue #2 with multiple backtick code blocks on same page.
+
 ### v6.4.1 - 2018-11-20
 * Fixed issue with embedded markdown not escaped inside code blocks (```)
 
