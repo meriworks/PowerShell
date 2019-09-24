@@ -87,6 +87,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -1059,22 +1060,23 @@ namespace Meriworks.Markdown
             return result;
         }
 
-        private static Regex _headerSetext = new Regex(@"
-                ^(.+?)
-                [ ]*
-                \n
-                (=+|-+)     # $1 = string of ='s or -'s
-                [ ]*
-                \n+",
-            RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
-
-        private static Regex _headerAtx = new Regex(@"
-                ^(\#{1,6})  # $1 = string of #'s
-                [ ]*
-                (.+?)       # $2 = Header text
-                [ ]*
-                \#*         # optional closing #'s (not counted)
-                \n+",
+        private static readonly Regex HeaderCombinedRegex = new Regex(@"
+                ^(?:
+                   (?:                    #atx style (### Heading
+                      (?<level>\#{1,6})   # $level = string of #'s
+                      [ ]*
+                      (?<heading>.+?)     # $heading = Header text
+                      [ ]*
+                      \#*                 # optional closing #'s (not counted)
+                  )|(?:                   # or underline
+                      (?<heading>.+?)     # $heading = Header text
+                      [ ]*
+                      \n
+                      (?<underline>=+|-+) # $underline = string of ='s or -'s (underline)
+                      [ ]*
+                  )
+                )\n+
+                ",
             RegexOptions.Multiline | RegexOptions.IgnorePatternWhitespace | RegexOptions.Compiled);
 
         /// <summary>
@@ -1095,13 +1097,14 @@ namespace Meriworks.Markdown
         /// </remarks>
         private void DoHeaders(Block block)
         {
+            _headerId=new List<string>();
             DoBlockReplace(block, text =>
             {
-                text = _headerSetext.Replace(text, new MatchEvaluator(SetextHeaderEvaluator));
-                text = _headerAtx.Replace(text, new MatchEvaluator(AtxHeaderEvaluator));
+               text = HeaderCombinedRegex.Replace(text, HeaderCombinedEvaluator);
                 return text;
             });
         }
+        private List<string> _headerId=new List<string>();
 
         private static void DoBlockReplace(Block block, Func<string, string> replaceFunc)
         {
@@ -1114,18 +1117,76 @@ namespace Meriworks.Markdown
                 block = block.Next;
             }
         }
-        private string SetextHeaderEvaluator(Match match)
+
+        private string HeaderCombinedEvaluator(Match match)
         {
-            string header = match.Groups[1].Value;
-            int level = match.Groups[2].Value.StartsWith("=") ? 1 : 2;
-            return string.Format("<h{1}>{0}</h{1}>\n\n", RunSpanGamut(header), level);
+            var header = match.Groups["heading"].Value;
+            var underline = match.Groups["underline"].Value;
+            var levelString = match.Groups["level"].Value;
+            var level = levelString.Length > 0 ? levelString.Length : underline.StartsWith("=") ? 1 : 2;
+            if(level==0)
+                throw new ApplicationException($"Neither level or underline exists  in match '{match.Value}'");
+            var id = MakeHeaderId(header);
+            id = MakeHierarchicalHeaderId(level, id);
+            if(id!=null)
+                return $"<h{level} id=\"{id}\">{RunSpanGamut(header)}</h{level}>\n\n";
+            return $"<h{level}>{RunSpanGamut(header)}</h{level}>\n\n";
+
         }
 
-        private string AtxHeaderEvaluator(Match match)
+        private string MakeHierarchicalHeaderId(int level, string id)
         {
-            string header = match.Groups[2].Value;
-            int level = match.Groups[1].Value.Length;
-            return string.Format("<h{1}>{0}</h{1}>\n\n", RunSpanGamut(header), level);
+            var prefix = MakeHeaderPrefix(level - 1);
+            SetHeaderPrefix(level, id);
+
+            return prefix + id;
+        }
+
+        private void SetHeaderPrefix(int level, string id)
+        {
+            var index = level - 1;
+            if (_headerId.Count > level)
+            {
+                //remove old tail
+                _headerId.RemoveRange(level,_headerId.Count-level);
+            }
+
+            while (_headerId.Count <= index)
+            {
+                _headerId.Add("");
+            }
+
+            _headerId[index] = id;
+        }
+
+        private string MakeHeaderPrefix(int level)
+        {
+            var prefix = "";
+            if (level <= 0)
+                return prefix;
+            var headerIndex = level - 1;
+
+            //append header id
+            if (_headerId.Count > headerIndex)
+            {
+                prefix = _headerId[headerIndex];
+            }
+            //append separator
+            prefix += "/";
+            //append previous prefix
+            if (level > 1)
+            {
+                prefix = MakeHeaderPrefix(level - 1) + prefix;
+            }
+            return prefix;
+        }
+
+        private string MakeHeaderId(string header)
+        {
+            if (string.IsNullOrWhiteSpace(header))
+                return null;
+            header = Regex.Replace(header,@"[^\w\d-\._~:@!$,;\*']", "-");
+            return header.ToLowerInvariant();
         }
 
 

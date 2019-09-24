@@ -135,7 +135,7 @@ namespace Meriworks.Markdown.Tests
         public void Header1()
         {
             var input = "#Header 1\nHeader 1\n========";
-            var expected = "<h1>Header 1</h1>\n\n<h1>Header 1</h1>\n";
+            var expected = "<h1 id=\"header-1\">Header 1</h1>\n\n<h1 id=\"header-1\">Header 1</h1>\n";
 
             var actual = m.Transform(input);
 
@@ -146,7 +146,7 @@ namespace Meriworks.Markdown.Tests
         public void Header2()
         {
             var input = "##Header 2\nHeader 2\n--------";
-            var expected = "<h2>Header 2</h2>\n\n<h2>Header 2</h2>\n";
+            var expected = "<h2 id=\"/header-2\">Header 2</h2>\n\n<h2 id=\"/header-2\">Header 2</h2>\n";
 
             var actual = m.Transform(input);
 
