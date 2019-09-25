@@ -209,6 +209,11 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
   The id value will be based on the actual heading value where characters other than 
   letters, digits or any of the following characters -.\_\~:@!$,;\*' will be replaced with a - (dash)
 
+  You can then link to a specific heading by using the id in the link. Example
+  ```
+  [See sub heading](#main-heading/sub-heading)
+  ```
+
 ###  6.4.2 - 2019-09-11
 * Fixed issue #2 with multiple backtick code blocks on same page.
 
