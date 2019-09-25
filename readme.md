@@ -191,6 +191,23 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 
 ### 6.5.0 - 2019-09-24
 * Added support for heading id:s #3
+  A heading will now include a id attribute which value represents the hierarchial heading structure.
+
+  Example:
+
+  ```
+  # Main heading
+
+  ## Sub heading
+  ```
+  Will produce the following HTML.
+  ```
+  <h1 id="main-heading">Main heading</h1>
+
+  <h2 id="main-heading/sub-heading">Sub heading</h2>
+  ```
+  The id value will be based on the actual heading value where characters other than 
+  letters, digits or any of the following characters -.\_\~:@!$,;\\*' will be replaced with a - (dash)
 
 ###  6.4.2 - 2019-09-11
 * Fixed issue #2 with multiple backtick code blocks on same page.
