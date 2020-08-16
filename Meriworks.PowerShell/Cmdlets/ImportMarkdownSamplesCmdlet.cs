@@ -5,12 +5,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 
-namespace Meriworks.PowerShell.Cmdlets {
+namespace Meriworks.PowerShell.Cmdlets
+{
     /// <summary>
     /// Summary description for ImportMarkdownSamplesCmdlet.
     /// </summary>
     [Cmdlet(VerbsData.Import, "MarkdownSamples", SupportsShouldProcess = true)]
-    public class ImportMarkdownSamplesCmdlet : Cmdlet {
+    public class ImportMarkdownSamplesCmdlet : Cmdlet
+    {
         /* *******************************************************************
          *  Properties 
          * *******************************************************************/
@@ -45,24 +47,28 @@ namespace Meriworks.PowerShell.Cmdlets {
         /* *******************************************************************
          *  Methods 
          * *******************************************************************/
-        protected override void ProcessRecord() {
+        protected override void ProcessRecord()
+        {
 
             WriteVerbose("markdownInsertSamples for file " + Filename + " started.");
             var file = new FileInfo(Filename);
             if (!file.Exists)
                 throw new FileNotFoundException(string.Format("File {0} is missing", Filename), Filename);
             string data;
-            using (var fs = new StreamReader(file.OpenRead())) {
+            using (var fs = new StreamReader(file.OpenRead()))
+            {
                 data = fs.ReadToEnd();
             }
             var newData = ParseAndInsertSampleData(data, file);
             var relPath = CalculateRelativePath(Path.Combine(RootPath, HtmlHelpPath), file);
             newData = ParseAndInsertApiReferenceLinks(newData, relPath);
-            if (string.Equals(data, newData)) {
+            if (string.Equals(data, newData))
+            {
                 WriteVerbose("No replacements where made");
                 return;
             }
-            using (var fs = new StreamWriter(file.Open(FileMode.Truncate))) {
+            using (var fs = new StreamWriter(file.Open(FileMode.Truncate)))
+            {
                 fs.Write(newData);
             }
             WriteVerbose("Saved changes");
@@ -76,7 +82,8 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <param name="relFile">The file to calculate the path from.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        internal string CalculateRelativePath(string path, FileInfo relFile) {
+        internal string CalculateRelativePath(string path, FileInfo relFile)
+        {
             if (!Path.IsPathRooted(path))
                 throw new ArgumentException("Cannot calculate relative path on a non rooted path", "path");
             var root = new Uri(path);
@@ -90,30 +97,64 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// Writes a Warn message to the log
         /// </summary>
         /// <param name="message"></param>
-        internal virtual void Warn(string message) {
+        internal virtual void Warn(string message)
+        {
             WriteWarning(message);
         }
         #endregion
-        internal string ParseAndInsertApiReferenceLinks(string data, string htmlRelPath) {
+        internal string ParseAndInsertApiReferenceLinks(string data, string htmlRelPath)
+        {
 
-            if (string.IsNullOrEmpty(htmlRelPath)) {
+            if (string.IsNullOrEmpty(htmlRelPath))
+            {
                 htmlRelPath = string.Empty;
-            } else if (!htmlRelPath.EndsWith("/")) {
+            }
+            else if (!htmlRelPath.EndsWith("/"))
+            {
                 htmlRelPath = htmlRelPath + "/";
             }
             const string pattern = @"
 \{\s*
 \#\s*
+(:?(?<specifier>\w):|:)?
 (?<name>[^\}]+?)
 \s*
 /?}";
-            return Regex.Replace(data, pattern, m => {
-                try {
+            return Regex.Replace(data, pattern, m =>
+            {
+                try
+                {
+                    var specifier = m.Groups["specifier"].Value;
                     var name = m.Groups["name"].Value.Trim();
-                    name = Regex.Replace(name, @"[\:\.\+]", "_");
+                    var hash = "";
+                    name = Regex.Replace(name, @"[\+]", "_");
                     name = Regex.Replace(name, @"[\`]", "__");
-                    return htmlRelPath + name + ".htm";
-                } catch (Exception e) {
+                    if (!string.IsNullOrEmpty(specifier))
+                    {
+                        char sp = char.ToLower(specifier[0]);
+                        switch (sp)
+                        {
+                            //members in docfx links has the last . replaced by a _
+                            case 'm':
+                            case 'p':
+                            case 'c':
+                                var memberIndex = name.LastIndexOf('.');
+                                if (memberIndex > 0 && memberIndex<name.Length-1)
+                                {
+                                    var className = name.Substring(0, memberIndex);
+                                    var memberName = name.Substring(memberIndex+1);
+                                    name = className;
+                                    hash = $"#{className.Replace('.', '_')}_{memberName}";
+                                }
+
+                                break;
+                        }
+
+                    }
+                    return $"{htmlRelPath}{name}.html{hash}";
+                }
+                catch (Exception e)
+                {
                     var message = string.Format(@"<pre style=""color:red;weight:bold;"">Cannot calculate APiReferenceLink with name {0}: {1}</pre>", m.Groups["name"].Value, e.Message);
                     Warn(message);
                     return message;
@@ -129,7 +170,8 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <param name="data">The data to parse</param>
         /// <param name="source">The <see cref="FileInfo"/> that contained the data</param>
         /// <returns>The data with replacements</returns>
-        internal string ParseAndInsertSampleData(string data, FileInfo source) {
+        internal string ParseAndInsertSampleData(string data, FileInfo source)
+        {
             //pattern to search for {CODE|XML [name][@path] /}
             const string pattern = @"
 ^[^\S\012\015]*\{
@@ -140,21 +182,26 @@ namespace Meriworks.PowerShell.Cmdlets {
 (?<path>.+?))?
 \s*
 /?}[^\S\012\015]*";
-            return Regex.Replace(data, pattern, m => {
-                try {
+            return Regex.Replace(data, pattern, m =>
+            {
+                try
+                {
                     var type = m.Groups["type"].Value;
                     var path = m.Groups["path"].Value.Trim();
                     var name = m.Groups["name"].Value.Trim();
                     type = ExpandCodeTypeFromPath(type, path);
                     return FindSampleData(source, name, path, type);
-                } catch (Exception e) {
+                }
+                catch (Exception e)
+                {
                     var message = string.Format(@"<pre style=""color:red;weight:bold;"">Cannot get file contents while parsing markdown file {0}: {1}</pre>", source.FullName, e.Message);
                     Warn(message);
                     return message;
                 }
             }, RegexOptions.Singleline | RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace);
         }
-        internal static string ExpandCodeTypeFromPath(string type, string path) {
+        internal static string ExpandCodeTypeFromPath(string type, string path)
+        {
             if (string.IsNullOrEmpty(path))
                 return type;
             //only expand type on code types
@@ -164,7 +211,8 @@ namespace Meriworks.PowerShell.Cmdlets {
             if (lastIndexOf < 0 || lastIndexOf == path.Length - 1)
                 return null;
             var extension = path.Substring(lastIndexOf + 1).ToLower();
-            switch (extension) {
+            switch (extension)
+            {
                 case "cs": return "csharp";
                 case "cshtml": return "razor";
                 default: return extension;
@@ -180,7 +228,8 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <param name="path">The path of the reference</param>
         /// <param name="type">The type of the reference</param>
         /// <returns></returns>
-        internal virtual string FindSampleData(FileInfo referee, string name, string path, string type) {
+        internal virtual string FindSampleData(FileInfo referee, string name, string path, string type)
+        {
             path = CalculateAbsolutePath(referee, path);
             var content = GetFileContents(name, path);
             return ConvertToType(type, content);
@@ -194,12 +243,14 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <param name="data"></param>
         /// <returns></returns>
         /// <exception cref="NotSupportedException">If type .</exception>
-        internal virtual string ConvertToType(string type, string data) {
+        internal virtual string ConvertToType(string type, string data)
+        {
             if (string.IsNullOrEmpty(type))
                 throw new ArgumentNullException("type");
 
             var brushType = type.ToLower();
-            switch (brushType) {
+            switch (brushType)
+            {
                 case "code":
                     brushType = "csharp";
                     break;
@@ -216,7 +267,8 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// </summary>
         /// <param name="data">The data to fix indentation for</param>
         /// <returns>The indented data</returns>
-        internal virtual string FixIndentation(string data) {
+        internal virtual string FixIndentation(string data)
+        {
             //count min no of leading spaces, skip blank lines, count tab as 4 spaces
             var leadingSpaces = CountMinNoOfLeadingSpaces(data);
             //Remove the number of blanks from each row
@@ -231,25 +283,35 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <param name="count">The number of spaces to remove</param>
         /// <returns></returns>
         /// <exception cref="ApplicationException">If cannot remove char .</exception>
-        private static string RemoveNoOfLeadingSpacesFromEachLine(string data, int count) {
+        private static string RemoveNoOfLeadingSpacesFromEachLine(string data, int count)
+        {
             var sb = new StringBuilder();
-            using (var r = new StringReader(data)) {
+            using (var r = new StringReader(data))
+            {
                 string line;
-                while ((line = r.ReadLine()) != null) {
+                while ((line = r.ReadLine()) != null)
+                {
                     var pos = 0;
                     var c = 0;
-                    while (c < count && pos < line.Length) {
-                        if (line[pos] == ' ') {
+                    while (c < count && pos < line.Length)
+                    {
+                        if (line[pos] == ' ')
+                        {
                             c++;
-                        } else if (line[pos] == '\t') {
+                        }
+                        else if (line[pos] == '\t')
+                        {
                             c += 4;
-                        } else {
+                        }
+                        else
+                        {
                             throw new ApplicationException("Cannot remove char " + pos + " (" + line[pos] + ") in line " + line);
                         }
                         pos++;
                     }
                     line = line.Substring(pos);
-                    if (c > count) {
+                    if (c > count)
+                    {
                         line = line.PadLeft(line.Length + c - count);
                     }
                     sb.AppendLine(line);
@@ -264,20 +326,26 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// </summary>
         /// <param name="data">The text to parse</param>
         /// <returns></returns>
-        private static int CountMinNoOfLeadingSpaces(string data) {
+        private static int CountMinNoOfLeadingSpaces(string data)
+        {
             var minSpaces = int.MaxValue;
-            using (var r = new StringReader(data)) {
+            using (var r = new StringReader(data))
+            {
                 string line;
-                while ((line = r.ReadLine()) != null) {
+                while ((line = r.ReadLine()) != null)
+                {
                     //skip blanks
-                    if (line.Length == 0 || Regex.IsMatch(line, @"^\s*$")) {
+                    if (line.Length == 0 || Regex.IsMatch(line, @"^\s*$"))
+                    {
                         continue;
                     }
                     var spacesFound = 0;
                     var pos = 0;
                     var done = false;
-                    do {
-                        switch (line[pos]) {
+                    do
+                    {
+                        switch (line[pos])
+                        {
                             case ' ':
                                 spacesFound++;
                                 break;
@@ -293,7 +361,8 @@ namespace Meriworks.PowerShell.Cmdlets {
                         pos++;
                     } while (pos < line.Length);
 
-                    if (minSpaces < spacesFound) {
+                    if (minSpaces < spacesFound)
+                    {
                         continue;
                     }
                     minSpaces = spacesFound;
@@ -309,17 +378,23 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <param name="sourceFile"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        internal virtual string CalculateAbsolutePath(FileInfo sourceFile, string path) {
-            if (sourceFile == null) {
+        internal virtual string CalculateAbsolutePath(FileInfo sourceFile, string path)
+        {
+            if (sourceFile == null)
+            {
                 throw new ArgumentNullException("sourceFile");
             }
 
-            if (string.IsNullOrEmpty(path)) {
+            if (string.IsNullOrEmpty(path))
+            {
                 path = Path.ChangeExtension(sourceFile.FullName, ".cs");
-            } else {
+            }
+            else
+            {
                 if (sourceFile.Directory == null)
                     throw new ApplicationException("sourceFile.Directory is null, " + sourceFile.FullName);
-                if (!Path.IsPathRooted(path)) {
+                if (!Path.IsPathRooted(path))
+                {
                     path = Path.GetFullPath(Path.Combine(sourceFile.Directory.FullName, path));
                 }
             }
@@ -335,16 +410,23 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <returns></returns>
         /// <exception cref="ApplicationException">If cannot find file .</exception>
         /// <exception cref="Exception">If cannot find region .</exception>
-        internal virtual string GetFileContents(string name, string path) {
-            if (!File.Exists(path)) {
+        internal virtual string GetFileContents(string name, string path)
+        {
+            if (!File.Exists(path))
+            {
                 throw new ApplicationException("Cannot find file " + path + " to get contents from");
             }
-            using (var fs = new StreamReader(File.OpenRead(path))) {
+            using (var fs = new StreamReader(File.OpenRead(path)))
+            {
                 var data = fs.ReadToEnd();
-                if (!string.IsNullOrEmpty(name)) {
-                    try {
+                if (!string.IsNullOrEmpty(name))
+                {
+                    try
+                    {
                         return FindRegionInData(data, name);
-                    } catch (Exception e) {
+                    }
+                    catch (Exception e)
+                    {
                         throw new Exception("Cannot find region " + name + " in file " + path, e);
                     }
                 }
@@ -360,14 +442,16 @@ namespace Meriworks.PowerShell.Cmdlets {
         /// <param name="name">The name of the region</param>
         /// <returns></returns>
         /// <exception cref="ApplicationException">If cannot find region .</exception>
-        internal virtual string FindRegionInData(string data, string name) {
+        internal virtual string FindRegionInData(string data, string name)
+        {
             var pattern = @"
 ^\s*\#region\s*" + Regex.Escape(name) + @"\s*$
 (.*?)$
 \s*\#endregion
 ";
             var match = Regex.Match(data, pattern, RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline | RegexOptions.Singleline);
-            if (!match.Success) {
+            if (!match.Success)
+            {
                 throw new ApplicationException("Cannot find region " + name + " in data");
             }
 

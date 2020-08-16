@@ -189,6 +189,9 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 <a name="changelog"></a>
 ## Changelog
 
+### 7.0.0 - 2020-08-16
+* Removed support for sandcastle links in favour for docfx links in markdown files.
+
 ### 6.5.0 - 2019-09-24
 * Added support for heading id:s #3
   A heading will now include a id attribute which value represents the hierarchial heading structure.

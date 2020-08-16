@@ -267,11 +267,13 @@ Some other data", new[] { new Sample("CODE", "name", ""), new Sample("CODE", "na
             _mocks.VerifyAll();
         }
         #endregion
-		[TestCase("{#T:ImageVault.Client.IVClient}","Help/html/T_ImageVault_Client_IVClient.htm","Help/html")]
-		[TestCase("{#AllMembers:T:ImageVault.Client.IVClient}", "html/AllMembers_T_ImageVault_Client_IVClient.htm", "html")]
-		[TestCase("{#P:ImageVault.Client.IVClient.PublishIdentifier}", "P_ImageVault_Client_IVClient_PublishIdentifier.htm", "")]
-		[TestCase("{#N:ImageVault.Client}", "Help/html/N_ImageVault_Client.htm", "Help/html/")]
-		[TestCase("{#M:ImageVault.Client.IIVClient_Query`1}", "Help/html/M_ImageVault_Client_IIVClient_Query__1.htm", "Help/html/")]
+		[TestCase("{#T:ImageVault.Client.IVClient}","Help/html/ImageVault.Client.IVClient.html","Help/html")]
+        [TestCase("{#ImageVault.Client.IVClient}","Help/html/ImageVault.Client.IVClient.html","Help/html")]
+		//[TestCase("{#AllMembers:T:ImageVault.Client.IVClient}", "html/ImageVault.Client.IVClient.html", "html")]
+		[TestCase("{#P:ImageVault.Client.IVClient.PublishIdentifier}", "ImageVault.Client.IVClient.html#ImageVault_Client_IVClient_PublishIdentifier", "")]
+		[TestCase("{#N:ImageVault.Client}", "Help/html/ImageVault.Client.html", "Help/html/")]
+        [TestCase("{#ImageVault.Client}", "Help/html/ImageVault.Client.html", "Help/html/")]
+		[TestCase("{#M:ImageVault.Client.IIVClient.Query`1}", "Help/html/ImageVault.Client.IIVClient.html#ImageVault_Client_IIVClient_Query__1", "Help/html/")]
         [TestCase(@"{$type: ""ImageVault.Common.Data.ThumbnailFormat, ImageVault.Common"")}", @"{$type: ""ImageVault.Common.Data.ThumbnailFormat, ImageVault.Common"")}", "")]
 		public void ParseAndInsertApiReferenceLinksTest(string data, string expected, string relPath) {
 			_mocks.ReplayAll();
