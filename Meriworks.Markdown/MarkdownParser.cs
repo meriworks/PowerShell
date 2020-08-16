@@ -1129,7 +1129,7 @@ namespace Meriworks.Markdown
             var id = MakeHeaderId(header);
             id = MakeHierarchicalHeaderId(level, id);
             if(id!=null)
-                return $"<h{level} id=\"{id}\">{RunSpanGamut(header)}</h{level}>\n\n";
+                return $"<h{level} id=\"{id}\"><a href=\"#{id}\" class=\"h-anchor\"></a>{RunSpanGamut(header)}</h{level}>\n\n";
             return $"<h{level}>{RunSpanGamut(header)}</h{level}>\n\n";
 
         }
