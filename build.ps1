@@ -17,7 +17,7 @@ function RunTests([string]$testAssemblyPath) {
 	Write-Host "Running test on $testAssemblyPath"
 	$testRunner=$env:GallioEcho
 	if($testRunner -eq $null -or -not (Test-Path $testRunner)) {
-		Die "Cannot find Testrunner. Set env:GallioEcho to the testrunner path. Current '$(env:GallioEcho)' '$(GallioEcho)'"
+		Die "Cannot find Testrunner. Set env:GallioEcho to the testrunner path. Current '$env:GallioEcho' '$GallioEcho'"
 	}
 	. $testRunner $testAssemblyPath
 }
