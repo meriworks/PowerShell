@@ -4,7 +4,7 @@
     <id>Meriworks.Markdown</id>
     <version>$version$</version>
     <authors>dhvik</authors>
-    <license type="file">license.txt</license>
+    <license type="file">license.md</license>
     <projectUrl>https://github.com/meriworks/PowerShell</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Markdown To Html. Based on MarkdownSharp</description>
@@ -14,6 +14,6 @@
     <developmentDependency>false</developmentDependency>
   </metadata>
   <files>
-    <file src="..\license.md" target="license.txt"/>
+    <file src="..\license.md" target="license.md"/>
   </files>
 </package>
