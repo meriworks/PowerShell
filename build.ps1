@@ -16,6 +16,9 @@ function Die([string]$message, [object[]]$output) {
 function RunTests([string]$testAssemblyPath) {
 	Write-Host "Running test on $testAssemblyPath"
 	$testRunner=$env:GallioEcho
+	#for some reason, Test-Path seems to not work with the GallioEcho path on myget
+	Write-Host "TestRunner $testRunner"
+	Write-Host "Test-Path $(Test-Path $testRunner)"
 	#if($testRunner -eq $null -or -not (Test-Path $testRunner)) {
 	#	Die "Cannot find Testrunner. Set env:GallioEcho to the testrunner path. Current '$env:GallioEcho' '$GallioEcho'"
 	#}
