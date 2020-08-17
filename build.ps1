@@ -17,7 +17,7 @@ function RunTests([string]$testAssemblyPath) {
 	Write-Host "Running test on $testAssemblyPath"
 	$testRunner=$env:GallioEcho
 	if($testRunner -eq $null -or -not (Test-Path $testRunner)) {
-		Die "Cannot find Testrunner. Set env:GallioEcho to the testrunner path"
+		Die "Cannot find Testrunner. Set env:GallioEcho to the testrunner path. Current '$(env:GallioEcho)' '$(GallioEcho)'"
 	}
 	. $testRunner $testAssemblyPath
 }
@@ -33,6 +33,7 @@ function findFirstAvailable($paths){
 }
 #setup local paths if not defined (yes I'm lazy)
 if($env:GallioEcho -eq $null) {
+	Write-Output "env:GallioEcho is not set, setting to local path"
 	$env:GallioEcho="D:\usr\bin\NUnit\bin\net-4.0\nunit-console.exe"
 }
 if($env:nuget-eq $null) {
