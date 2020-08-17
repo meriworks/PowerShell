@@ -16,9 +16,10 @@ function Die([string]$message, [object[]]$output) {
 function RunTests([string]$testAssemblyPath) {
 	Write-Host "Running test on $testAssemblyPath"
 	$testRunner=$env:GallioEcho
-	if($testRunner -eq $null -or -not (Test-Path $testRunner)) {
-		Die "Cannot find Testrunner. Set env:GallioEcho to the testrunner path. Current '$env:GallioEcho' '$GallioEcho'"
-	}
+	#if($testRunner -eq $null -or -not (Test-Path $testRunner)) {
+	#	Die "Cannot find Testrunner. Set env:GallioEcho to the testrunner path. Current '$env:GallioEcho' '$GallioEcho'"
+	#}
+	Write-Host "$testRunner $testAssemblyPath"
 	. $testRunner $testAssemblyPath
 }
 #Finds the first available path
