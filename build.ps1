@@ -62,12 +62,13 @@ if(-not(Test-Path $nugetExe)){
 }
 
 # Detect MSBuild 15.0 path
+Write-Output "Finding suitable msbuild"
 $defaultMsbuild="$(Get-Content env:windir)\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"
 $pfdir = (${env:ProgramFiles(x86)}, ${env:ProgramFiles} -ne $null)[0];
 $vs2017dir = join-path $pfDir "Microsoft Visual Studio\2017"
-$possiblePaths = ((join-path $vs2017dir "Community\MSBuild\15.0\Bin\MSBuild.exe"),(join-path $vs2017dir "Professional\MSBuild\15.0\Bin\MSBuild.exe"),(join-path $vs2017dir "Enterprise\MSBuild\15.0\Bin\MSBuild.exe"),$defaultMsbuild)
+$possiblePaths = ($env:MsBuildExe,(join-path $vs2017dir "Community\MSBuild\15.0\Bin\MSBuild.exe"),(join-path $vs2017dir "Professional\MSBuild\15.0\Bin\MSBuild.exe"),(join-path $vs2017dir "Enterprise\MSBuild\15.0\Bin\MSBuild.exe"),$defaultMsbuild)
 $msbuild = findFirstAvailable $possiblePaths
-
+Write-Output "Selected msbuild $msbuild"
 #build solution
 & "$msbuild" "PowerShell.sln" /p:Configuration=$config 
 
