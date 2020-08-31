@@ -294,7 +294,6 @@ namespace Meriworks.Markdown.Tests
         /// </summary>
         static void UnitTests()
         {
-            log4net.Config.XmlConfigurator.Configure();
 
             string testAssemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
 

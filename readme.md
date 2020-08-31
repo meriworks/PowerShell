@@ -189,8 +189,10 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 <a name="changelog"></a>
 ## Changelog
 
-### 7.0.1 - 2020-08-31
+### 7.1 - 2020-08-31
 * Fix issue with some specific backtick blocks
+* Migrated to Azure Pipelines
+* Upgraded tests to nunit 3
 
 ### 7.0.0 - 2020-08-16
 * Removed support for sandcastle links in favour for docfx links in markdown files. #5

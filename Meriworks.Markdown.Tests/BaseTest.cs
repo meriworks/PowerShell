@@ -5,24 +5,5 @@ namespace Meriworks.Markdown.Tests
 {
     public class BaseTest
     {
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(typeof(BaseTest).FullName);
-
-        static BaseTest()
-        {
-            log4net.Config.XmlConfigurator.Configure();
-            log.Debug("Logging configured");
-        }
-
-        [OneTimeSetUp]
-        public void SetUp()
-        {
-            log.InfoFormat("{0} - Tests starting", GetType().Name);
-        }
-
-        [OneTimeTearDown, DebuggerStepThrough]
-        public void TearDown()
-        {
-            log.InfoFormat("{0} - Tests complete", GetType().Name);
-        }
     }
 }
