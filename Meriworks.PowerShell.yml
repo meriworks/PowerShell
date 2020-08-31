@@ -21,7 +21,7 @@ variables:
   value: '7.1'
 #build will reset to 0 whenever version.majorMinor is changed
 - name: version.build
-  value: $[conter(variables['version.majorMinor'],0)]
+  value: $[counter(variables['version.majorMinor'],0)]
 #revision will never reset, starting at 300 (to mimic the last iteration from last buildserver)
 - name:  version.revision
   value: $[counter('revision',0)] 
