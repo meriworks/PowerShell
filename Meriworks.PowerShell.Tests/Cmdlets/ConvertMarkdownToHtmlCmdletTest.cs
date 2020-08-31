@@ -38,7 +38,7 @@ namespace Meriworks.PowerShell.Tests.Cmdlets {
 		/// Gets the FillTemplateTestData of the MarkdownConvertToHtmlTest
 		/// </summary>
 		/// <value></value>
-		public IEnumerable<TestCaseData> FillTemplateTestData {
+		public static IEnumerable<TestCaseData> FillTemplateTestData {
 			get {
 				yield return new TestCaseData(@"<html><head><title>${title}</title></head><body>${content}</body></html>", new Dictionary<string, string> { { "title", "MyTitle" }, { "content", "MyContent" } }, @"<html><head><title>MyTitle</title></head><body>MyContent</body></html>");
 				yield return new TestCaseData(@"<html>
@@ -71,7 +71,7 @@ namespace Meriworks.PowerShell.Tests.Cmdlets {
 		/// <param name="templateData"></param>
 		/// <param name="dictionary"></param>
 		/// <param name="expected"></param>
-		[TestCaseSource("FillTemplateTestData")]
+		[TestCaseSource(nameof(FillTemplateTestData))]
 		public void FillTemplateTest(string templateData, Dictionary<string, string> dictionary, string expected) {
 
 			_mocks.ReplayAll();

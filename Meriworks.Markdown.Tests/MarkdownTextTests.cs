@@ -14,7 +14,7 @@ namespace Meriworks.Markdown.Tests
     {
 
         private static readonly Assembly TestAssembly = Assembly.GetAssembly(typeof(BaseTest));
-        public IEnumerable<TestCaseData> GetTests()
+        public static IEnumerable<TestCaseData> GetTests()
         {
             var namespacePrefix = $"{TestAssembly.GetName().Name}.testfiles";
             var resourceNames = TestAssembly.GetManifestResourceNames();

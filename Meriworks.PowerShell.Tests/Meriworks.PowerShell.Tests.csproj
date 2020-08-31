@@ -1,5 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\NUnit.3.12.0\build\NUnit.props" Condition="Exists('..\packages\NUnit.3.12.0\build\NUnit.props')" />
+  <Import Project="..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props" Condition="Exists('..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -33,9 +35,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.6.3.13283, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="nunit.framework, Version=3.12.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.12.0\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Rhino.Mocks, Version=3.6.0.0, Culture=neutral, PublicKeyToken=0b3305902db7183f, processorArchitecture=MSIL">
       <HintPath>..\packages\RhinoMocks.3.6.1\lib\net\Rhino.Mocks.dll</HintPath>
@@ -88,6 +89,8 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Meriworks.PowerShell.BuildEvents.5.2.0\build\Meriworks.PowerShell.BuildEvents.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Meriworks.PowerShell.BuildEvents.5.2.0\build\Meriworks.PowerShell.BuildEvents.targets'))" />
     <Error Condition="!Exists('..\packages\Meriworks.PowerShell.ConfigBuilder.5.2.0\build\Meriworks.PowerShell.ConfigBuilder.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Meriworks.PowerShell.ConfigBuilder.5.2.0\build\Meriworks.PowerShell.ConfigBuilder.targets'))" />
+    <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props'))" />
+    <Error Condition="!Exists('..\packages\NUnit.3.12.0\build\NUnit.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit.3.12.0\build\NUnit.props'))" />
   </Target>
   <Import Project="..\packages\Meriworks.PowerShell.BuildEvents.5.2.0\build\Meriworks.PowerShell.BuildEvents.targets" Condition="Exists('..\packages\Meriworks.PowerShell.BuildEvents.5.2.0\build\Meriworks.PowerShell.BuildEvents.targets')" />
   <Import Project="..\packages\Meriworks.PowerShell.ConfigBuilder.5.2.0\build\Meriworks.PowerShell.ConfigBuilder.targets" Condition="Exists('..\packages\Meriworks.PowerShell.ConfigBuilder.5.2.0\build\Meriworks.PowerShell.ConfigBuilder.targets')" />
