@@ -1,0 +1,19 @@
+﻿```
+  <div>
+    <h3>Media</h3>
+    @Html.PropertyFor(m => m.Images,"GalleryList")
+  </div>
+```
+
+You can also specify it using a UIHint attribute directly on the property of the content model.
+
+```
+    [ContentType(GUID = "2F509C22-AC6E-4014-832D-08037BF387B9")]
+    public class GalleryPage : PageData {
+
+        [UIHint("GalleryList",PresentationLayer.Website)]
+        [Display(GroupName = SystemTabNames.Content, Order = 100)]
+        [BackingType(typeof(PropertyMediaList))]
+        public virtual MediaReferenceList<MediaReference> Images { get; set; }
+    }
+```

@@ -359,6 +359,11 @@ namespace Meriworks.Markdown
             Setup();
 
             text = Normalize(text);
+            //codeblocks should be done first
+            var block = new Block { Text = text };
+            DoCodeBlockWithBackticks(block);
+
+            text = block.Concat();
 
             text = HashHTMLBlocks(text);
             text = StripLinkDefinitions(text);
@@ -394,7 +399,6 @@ namespace Meriworks.Markdown
         private string RunBlockGamut(string text)
         {
             var block = new Block { Text = text };
-            DoCodeBlockWithBackticks(block);
             DoHeaders(block);
             DoTables(block);
             DoHorizontalRules(block);

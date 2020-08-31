@@ -172,9 +172,11 @@
     <EmbeddedResource Include="testfiles\mdtest-1.1\table.text" />
     <EmbeddedResource Include="testfiles\meriworks\example1.text" />
     <EmbeddedResource Include="testfiles\meriworks\heading-with-id.text" />
+    <EmbeddedResource Include="testfiles\meriworks\codeblocks.text" />
     <None Include="testfiles\pandoc\unpredictable-sublists.text" />
     <EmbeddedResource Include="testfiles\meriworks\example1.html" />
     <EmbeddedResource Include="testfiles\meriworks\heading-with-id.html" />
+    <EmbeddedResource Include="testfiles\meriworks\codeblocks.html" />
     <Content Include="testfiles\pandoc\!readme.txt" />
     <EmbeddedResource Include="testfiles\pandoc\nested-divs.html" />
     <Content Include="testfiles\php-markdown\!readme.txt" />
