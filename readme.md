@@ -189,6 +189,9 @@ History: Milan ported the Markdown processor to C#. He granted license to Jeff s
 <a name="changelog"></a>
 ## Changelog
 
+### 7.0.1 - 2020-08-31
+* Fix issue with some specific backtick blocks
+
 ### 7.0.0 - 2020-08-16
 * Removed support for sandcastle links in favour for docfx links in markdown files. #5
 * Add html for heading links #4
