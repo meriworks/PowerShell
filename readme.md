@@ -187,7 +187,11 @@ Copyright (c) 2009-2010 Jeff Atwood
 History: Milan ported the Markdown processor to C#. He granted license to Jeff so he can open source it and let the community contribute to and improve MarkdownSharp.
 
 <a name="changelog"></a>
+
 ## Changelog
+
+### 7.2 - 2021-04-22
+* Removed lib from Meriworks.PowerShell nuget package
 
 ### 7.1 - 2020-08-31
 * Fix issue with some specific backtick blocks

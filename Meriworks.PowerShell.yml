@@ -18,7 +18,7 @@ variables:
 - group: 'Certificate Passwords'
 - group: 'common'
 - name:  version.majorMinor
-  value: '7.1'
+  value: '7.2'
 #build will reset to 0 whenever version.majorMinor is changed
 - name: version.build
   value: $[counter(variables['version.majorMinor'],0)]
@@ -87,10 +87,16 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'pack'
-    packagesToPack: '**\*.csproj;!**\*.Tests.csproj'
+    packagesToPack: '**\*.csproj;!**\*.Tests.csproj;!**\Meriworks.PowerShell.csproj'
     packDestination: '$(build.artifactstagingdirectory)'
     versioningScheme: 'off'
-    
+
+##Powershell nuget should exclude lib
+- task: NuGetCommand@2
+  inputs:
+    command: 'custom'
+    arguments: 'pack $(Build.SourcesDirectory)\Meriworks.PowerShell\Meriworks.PowerShell.csproj  -NonInteractive -OutputDirectory $(build.artifactstagingdirectory) -Properties Configuration=Release -Verbosity Detailed -Exclude bin/**/*.*'
+
 - task: NuGetCommand@2
   inputs:
     command: 'push'
